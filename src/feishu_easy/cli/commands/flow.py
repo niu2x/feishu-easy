@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from pathlib import Path
 from typing import Annotated
 
@@ -7,6 +8,9 @@ import typer
 
 from ...services.convert_service import (
     get_online_markdown_raw_by_node_token as get_online_markdown_raw_by_node_token_service,
+)
+from ...services.convert_service import (
+    get_online_unified_document_by_node_token as get_online_unified_document_by_node_token_service,
 )
 from ...services.upload_service import upload_markdown as upload_markdown_service
 
@@ -49,3 +53,15 @@ def get_markdown(
     ],
 ) -> None:
     typer.echo(get_online_markdown_raw_by_node_token_service(node_token=node_token))
+
+@app.command("get-unified")
+def get_unified(
+    node_token: Annotated[
+        str,
+        typer.Argument(help="Feishu wiki node_token"),
+    ],
+) -> None:
+    unified_document = get_online_unified_document_by_node_token_service(
+        node_token=node_token
+    )
+    typer.echo(json.dumps(unified_document.model_dump(), indent=2, ensure_ascii=False))
