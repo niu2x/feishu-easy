@@ -52,46 +52,6 @@ def get_tenant_access_token() -> None:
         )
     )
 
-
-@app.command()
-def convert(
-    from_type: Literal["doc", "docx", "sheet"] = typer.Option(
-        ...,
-        "--from",
-        help="Source document type",
-    ),
-    to_type: Literal["unified", "markdown"] = typer.Option(
-        ...,
-        "--to",
-        help="Target document type",
-    ),
-    mode: Literal["online", "offline"] = typer.Option(
-        "online",
-        "--mode",
-        help="Rewrite mode for generated resource URLs",
-    ),
-) -> None:
-    raw_content = sys.stdin.read()
-    if not raw_content.strip():
-        raise typer.BadParameter(
-            "stdin is empty, pipe raw content into this command",
-            param_hint="stdin",
-        )
-
-    converted = convert_from_feishu_service(
-        raw_content,
-        source_type=from_type,
-        target_type=to_type,
-        mode=mode,
-    )
-
-    if isinstance(converted, str):
-        typer.echo(converted)
-        return
-
-    typer.echo(dumps(converted, indent=2, ensure_ascii=False))
-
-
 app.add_typer(wiki_app, name="wiki")
 app.add_typer(board_app, name="board")
 app.add_typer(bitable_app, name="bitable")
