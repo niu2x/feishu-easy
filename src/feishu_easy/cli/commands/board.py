@@ -7,7 +7,7 @@ import json
 
 import typer
 
-from ..services.board_service import (
+from ...services.board_service import (
     download_whiteboard_as_image,
     list_whiteboard_node as list_whiteboard_node_service,
 )

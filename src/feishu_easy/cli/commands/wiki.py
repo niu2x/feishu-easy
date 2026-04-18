@@ -6,22 +6,24 @@ import json
 
 import typer
 
-from ..services.wiki_service import (
+from ...services.wiki_service import (
     create_wiki_space_node as create_wiki_space_node_service,
 )
-from ..services.wiki_service import get_wiki_space_node as get_wiki_space_node_service
-from ..services.wiki_service import get_wiki_space as get_wiki_space_service
-from ..services.wiki_service import (
+from ...services.wiki_service import get_wiki_space_node as get_wiki_space_node_service
+from ...services.wiki_service import get_wiki_space as get_wiki_space_service
+from ...services.wiki_service import (
     update_wiki_node_title as update_wiki_node_title_service,
 )
-from ..services.wiki_service import move_wiki_space_node as move_wiki_space_node_service
-from ..services.wiki_service import (
+from ...services.wiki_service import (
+    move_wiki_space_node as move_wiki_space_node_service,
+)
+from ...services.wiki_service import (
     list_wiki_space_member as list_wiki_space_member_service,
 )
-from ..services.wiki_service import (
+from ...services.wiki_service import (
     list_wiki_space_node as list_wiki_space_node_service,
 )
-from ..services.wiki_service import list_wiki_space as list_wiki_space_service
+from ...services.wiki_service import list_wiki_space as list_wiki_space_service
 
 app = typer.Typer(no_args_is_help=True)
 NodeType = Literal["origin", "shortcut"]

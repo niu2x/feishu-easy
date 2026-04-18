@@ -8,6 +8,7 @@ from lark_oapi.api.board.v1 import (
 )
 
 from .base import _BaseAPIGroup
+from .errors import FeishuResponseError
 
 class FeishuBoardAPI(_BaseAPIGroup):
     def list_whiteboard_node(
@@ -46,8 +47,9 @@ class FeishuBoardAPI(_BaseAPIGroup):
         )
 
         if response.file is None:
-            raise RuntimeError(
-                "client.board.v1.whiteboard.download_as_image failed: file stream missing"
+            raise FeishuResponseError(
+                "client.board.v1.whiteboard.download_as_image failed: file stream missing",
+                action="client.board.v1.whiteboard.download_as_image",
             )
 
         return bytes(response.file.read())

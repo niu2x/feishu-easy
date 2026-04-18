@@ -6,7 +6,7 @@ import json
 
 import typer
 
-from ..services.sheets_service import (
+from ...services.sheets_service import (
     create_spreadsheet as create_spreadsheet_service,
     get_sheet_content as get_sheet_content_service,
     get_spreadsheet_metainfo as get_spreadsheet_metainfo_service,

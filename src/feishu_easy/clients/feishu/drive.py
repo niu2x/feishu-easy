@@ -34,6 +34,7 @@ from .constants import (
     DRIVE_LIST_FILE_VERSION_PAGE_SIZE,
     DRIVE_LIST_FILE_VIEW_RECORD_PAGE_SIZE,
 )
+from .errors import FeishuResponseError
 
 class FeishuDriveAPI(_BaseAPIGroup):
     @staticmethod
@@ -419,12 +420,14 @@ class FeishuDriveAPI(_BaseAPIGroup):
         )
 
         if not isinstance(response.file_name, str) or not response.file_name:
-            raise RuntimeError(
-                "client.drive.v1.file.download failed: file_name missing"
+            raise FeishuResponseError(
+                "client.drive.v1.file.download failed: file_name missing",
+                action="client.drive.v1.file.download",
             )
         if response.file is None:
-            raise RuntimeError(
-                "client.drive.v1.file.download failed: file stream missing"
+            raise FeishuResponseError(
+                "client.drive.v1.file.download failed: file stream missing",
+                action="client.drive.v1.file.download",
             )
 
         return response.file_name, bytes(response.file.read())
@@ -439,12 +442,14 @@ class FeishuDriveAPI(_BaseAPIGroup):
         )
 
         if not isinstance(response.file_name, str) or not response.file_name:
-            raise RuntimeError(
-                "client.drive.v1.media.download failed: file_name missing"
+            raise FeishuResponseError(
+                "client.drive.v1.media.download failed: file_name missing",
+                action="client.drive.v1.media.download",
             )
         if response.file is None:
-            raise RuntimeError(
-                "client.drive.v1.media.download failed: file stream missing"
+            raise FeishuResponseError(
+                "client.drive.v1.media.download failed: file stream missing",
+                action="client.drive.v1.media.download",
             )
 
         return response.file_name, bytes(response.file.read())
