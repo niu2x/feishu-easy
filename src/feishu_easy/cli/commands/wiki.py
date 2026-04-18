@@ -205,52 +205,6 @@ def create_space_node_shortcut(
     )
 
 @app.command()
-def create_space_node(
-    space_id: Annotated[
-        int,
-        typer.Argument(help="Wiki space ID"),
-    ],
-    node_type: Annotated[
-        NodeType,
-        typer.Option("--node-type", help="Node type: origin or shortcut"),
-    ],
-    obj_type: Annotated[
-        WikiNodeObjType,
-        typer.Option(
-            "--obj-type",
-            help="Node object type: file/docx/bitable/doc/sheet/mindnote/shortcut/slides",
-        ),
-    ],
-    parent_node_token: Annotated[
-        str,
-        typer.Option("--parent-node-token", help="Parent wiki node token"),
-    ],
-    title: Annotated[
-        str,
-        typer.Option("--title", help="New node title"),
-    ],
-    origin_node_token: Annotated[
-        str | None,
-        typer.Option("--origin-node-token", help="Origin node token for shortcut"),
-    ] = None,
-) -> None:
-    if node_type == "shortcut":
-        origin_node_token = _require_option(
-            origin_node_token,
-            "origin-node-token",
-            "node-type is shortcut",
-        )
-
-    _create_space_node(
-        space_id=space_id,
-        obj_type=obj_type,
-        parent_node_token=parent_node_token,
-        node_type=node_type,
-        title=title,
-        origin_node_token=origin_node_token or "",
-    )
-
-@app.command()
 def list_space() -> None:
     _echo_json(list_wiki_space_service())
 
