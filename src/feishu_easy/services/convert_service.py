@@ -34,6 +34,8 @@ def convert_from_feishu(
     board_node_fetcher: Callable[[str], dict[str, Any]] | None = None,
     expand_sheets: bool = False,
     sheet_block_fetcher: Callable[[str], list[Block]] | None = None,
+    expand_bitable: bool = False,
+    bitable_block_fetcher: Callable[[str], list[Block]] | None = None,
 ) -> dict[str, Any] | str:
     try:
         payload = json.loads(raw_content)
@@ -58,6 +60,8 @@ def convert_from_feishu(
             board_node_fetcher=board_node_fetcher,
             expand_sheets=expand_sheets,
             sheet_block_fetcher=sheet_block_fetcher,
+            expand_bitable=expand_bitable,
+            bitable_block_fetcher=bitable_block_fetcher,
         )
     elif source_type == "sheet":
         result = sheet_to_unified(normalized)
@@ -76,13 +80,30 @@ def convert_from_feishu(
 def get_online_unified_document_by_node_token(
     node_token: str,
     *,
-    api: FeishuAPI | None = None,
     expand_board: bool = False,
     expand_sheets: bool = False,
+    expand_bitable: bool = False,
 ) -> UnifiedDocument:
-    feishu_api = api or FeishuAPI()
+    return _get_online_unified_document_by_node_token(
+        node_token,
+        api=FeishuAPI(),
+        expand_board=expand_board,
+        expand_sheets=expand_sheets,
+        expand_bitable=expand_bitable,
+    )
 
-    source = get_online_wiki_node_source_by_node_token(node_token, api=feishu_api)
+
+def _get_online_unified_document_by_node_token(
+    node_token: str,
+    *,
+    api: FeishuAPI,
+    expand_board: bool = False,
+    expand_sheets: bool = False,
+    expand_bitable: bool = False,
+) -> UnifiedDocument:
+    feishu_api = api
+
+    source = _get_online_wiki_node_source_by_node_token(node_token, api=feishu_api)
     unified_payload = convert_online_wiki_node_source(
         source,
         target_type="unified",
@@ -94,6 +115,12 @@ def get_online_unified_document_by_node_token(
         sheet_block_fetcher=(
             _build_online_sheet_block_fetcher(api=feishu_api) if expand_sheets else None
         ),
+        expand_bitable=expand_bitable,
+        bitable_block_fetcher=(
+            _build_online_bitable_block_fetcher(api=feishu_api)
+            if expand_bitable
+            else None
+        ),
     )
     if not isinstance(unified_payload, dict):
         raise ServiceError("Unexpected conversion result for unified document")
@@ -103,13 +130,30 @@ def get_online_unified_document_by_node_token(
 def get_online_markdown_raw_by_node_token(
     node_token: str,
     *,
-    api: FeishuAPI | None = None,
     expand_board: bool = False,
     expand_sheets: bool = False,
+    expand_bitable: bool = False,
 ) -> str:
-    feishu_api = api or FeishuAPI()
+    return _get_online_markdown_raw_by_node_token(
+        node_token,
+        api=FeishuAPI(),
+        expand_board=expand_board,
+        expand_sheets=expand_sheets,
+        expand_bitable=expand_bitable,
+    )
 
-    source = get_online_wiki_node_source_by_node_token(node_token, api=feishu_api)
+
+def _get_online_markdown_raw_by_node_token(
+    node_token: str,
+    *,
+    api: FeishuAPI,
+    expand_board: bool = False,
+    expand_sheets: bool = False,
+    expand_bitable: bool = False,
+) -> str:
+    feishu_api = api
+
+    source = _get_online_wiki_node_source_by_node_token(node_token, api=feishu_api)
     markdown = convert_online_wiki_node_source(
         source,
         target_type="markdown",
@@ -121,6 +165,12 @@ def get_online_markdown_raw_by_node_token(
         sheet_block_fetcher=(
             _build_online_sheet_block_fetcher(api=feishu_api) if expand_sheets else None
         ),
+        expand_bitable=expand_bitable,
+        bitable_block_fetcher=(
+            _build_online_bitable_block_fetcher(api=feishu_api)
+            if expand_bitable
+            else None
+        ),
     )
     if not isinstance(markdown, str):
         raise ServiceError("Unexpected conversion result for markdown")
@@ -129,10 +179,16 @@ def get_online_markdown_raw_by_node_token(
 
 def get_online_wiki_node_source_by_node_token(
     node_token: str,
-    *,
-    api: FeishuAPI | None = None,
 ) -> dict[str, str]:
-    feishu_api = api or FeishuAPI()
+    return _get_online_wiki_node_source_by_node_token(node_token, api=FeishuAPI())
+
+
+def _get_online_wiki_node_source_by_node_token(
+    node_token: str,
+    *,
+    api: FeishuAPI,
+) -> dict[str, str]:
+    feishu_api = api
     node = feishu_api.wiki.get_node(node_token)
 
     obj_type = node.get("obj_type")
@@ -186,50 +242,33 @@ def get_online_wiki_node_source_by_node_token(
         )
 
     elif obj_type == "bitable":
-        tables = _list_bitable_table_resources(obj_token, api=feishu_api)
-
-        bitable_items: list[dict[str, Any]] = []
-        for table in tables:
-            table_id = table.get("table_id")
-            if not isinstance(table_id, str):
-                continue
-
-            bitable_items.append(
-                {
-                    "app_token": obj_token,
-                    "table": table,
-                    "data": feishu_api.bitable.search_app_table_record(
-                        obj_token,
-                        table_id,
-                    ).get("items", []),
-                    "fields": feishu_api.bitable.list_app_table_field(
-                        obj_token, table_id
-                    ).get("items", []),
-                }
-            )
+        bitable_items = _list_bitable_table_resources_with_online_data(
+            obj_token,
+            api=feishu_api,
+        )
 
         if not bitable_items:
             raise ServiceError("list_app_table failed: no table resource found")
 
-        return {
-            "payload": json.dumps(
-                {
-                    "node": node,
-                    "obj": bitable_items,
-                },
-                ensure_ascii=False,
-            ),
-            "obj_type": obj_type,
-        }
+        return _build_online_bitable_source(
+            node_title=str(node.get("title") or ""),
+            bitable_items=bitable_items,
+        )
 
 
 def get_online_sheet_asset_source_by_token(
     token: str,
+) -> dict[str, str]:
+    return _get_online_sheet_asset_source_by_token(token, api=FeishuAPI())
+
+
+def _get_online_sheet_asset_source_by_token(
+    token: str,
     *,
-    api: FeishuAPI | None = None,
+    api: FeishuAPI,
 ) -> dict[str, str]:
     spreadsheet_token, sheet_token = resolve_sheet_asset_tokens(token)
-    feishu_api = api or FeishuAPI()
+    feishu_api = api
 
     sheets = _list_spreadsheet_sheet_resources_with_online_data(
         spreadsheet_token,
@@ -262,9 +301,9 @@ def _list_spreadsheet_sheet_resources_with_online_data(
     api: FeishuAPI,
     target_sheet_id: str | None = None,
 ) -> list[dict[str, Any]]:
-    from .sheets_service import get_sheet_content, list_spreadsheet_sheet_resources
+    from .sheets_service import _get_sheet_content, _list_spreadsheet_sheet_resources
 
-    sheets = list_spreadsheet_sheet_resources(spreadsheet_token, api=api)
+    sheets = _list_spreadsheet_sheet_resources(spreadsheet_token, api=api)
     if isinstance(target_sheet_id, str):
         sheets = [sheet for sheet in sheets if sheet.get("sheet_id") == target_sheet_id]
 
@@ -276,7 +315,7 @@ def _list_spreadsheet_sheet_resources_with_online_data(
             continue
 
         if sheet.get("resource_type") == "sheet":
-            sheet["data"] = get_sheet_content(
+            sheet["data"] = _get_sheet_content(
                 spreadsheet_token=spreadsheet_token,
                 sheet_id=current_sheet_id,
                 api=api,
@@ -358,12 +397,106 @@ def _list_bitable_table_resources(
     return [table for table in tables]
 
 
+def _list_bitable_table_resources_with_online_data(
+    app_token: str,
+    *,
+    api: FeishuAPI,
+    target_table_id: str | None = None,
+) -> list[dict[str, Any]]:
+    table_resources = _list_bitable_table_resources(app_token, api=api)
+    if isinstance(target_table_id, str):
+        table_resources = [
+            table for table in table_resources if table.get("table_id") == target_table_id
+        ]
+
+    bitable_items: list[dict[str, Any]] = []
+    for table in table_resources:
+        table_id = table.get("table_id")
+        if not isinstance(table_id, str):
+            continue
+
+        bitable_items.append(
+            {
+                "app_token": app_token,
+                "table": table,
+                "data": api.bitable.search_app_table_record(
+                    app_token,
+                    table_id,
+                ).get("items", []),
+                "fields": api.bitable.list_app_table_field(
+                    app_token,
+                    table_id,
+                ).get("items", []),
+            }
+        )
+
+    return bitable_items
+
+
+def _build_online_bitable_source(
+    *,
+    node_title: str,
+    bitable_items: list[dict[str, Any]],
+) -> dict[str, str]:
+    return {
+        "payload": json.dumps(
+            {
+                "node": {
+                    "title": node_title,
+                },
+                "obj": bitable_items,
+            },
+            ensure_ascii=False,
+        ),
+        "obj_type": "bitable",
+    }
+
+
+def get_online_bitable_asset_source_by_token(
+    token: str,
+) -> dict[str, str]:
+    return _get_online_bitable_asset_source_by_token(token, api=FeishuAPI())
+
+
+def _get_online_bitable_asset_source_by_token(
+    token: str,
+    *,
+    api: FeishuAPI,
+) -> dict[str, str]:
+    app_token, table_id = resolve_bitable_asset_tokens(token)
+    feishu_api = api
+
+    bitable_items = _list_bitable_table_resources_with_online_data(
+        app_token,
+        api=feishu_api,
+        target_table_id=table_id,
+    )
+
+    if not bitable_items:
+        raise ServiceError("query bitable asset failed: no table resource found")
+
+    return _build_online_bitable_source(node_title="", bitable_items=bitable_items)
+
+
+def resolve_bitable_asset_tokens(token: str) -> tuple[str, str | None]:
+    text = token.strip()
+    if not text:
+        raise ServiceValidationError(
+            "Invalid bitable token, expected token=<app_token> or <app_token>_<table_id>"
+        )
+
+    parts = text.rsplit("_", maxsplit=1)
+    if len(parts) == 2 and parts[0] and parts[1]:
+        return parts[0], parts[1]
+    return text, None
+
+
 def _build_online_sheet_block_fetcher(
     *,
     api: FeishuAPI,
 ) -> Callable[[str], list[Block]]:
     def fetch_sheet_blocks(token: str) -> list[Block]:
-        source = get_online_sheet_asset_source_by_token(token, api=api)
+        source = _get_online_sheet_asset_source_by_token(token, api=api)
         unified_payload = convert_online_wiki_node_source(
             source,
             target_type="unified",
@@ -375,6 +508,23 @@ def _build_online_sheet_block_fetcher(
     return fetch_sheet_blocks
 
 
+def _build_online_bitable_block_fetcher(
+    *,
+    api: FeishuAPI,
+) -> Callable[[str], list[Block]]:
+    def fetch_bitable_blocks(token: str) -> list[Block]:
+        source = _get_online_bitable_asset_source_by_token(token, api=api)
+        unified_payload = convert_online_wiki_node_source(
+            source,
+            target_type="unified",
+        )
+        if not isinstance(unified_payload, dict):
+            raise ServiceError("Unexpected conversion result for bitable asset")
+        return UnifiedDocument.model_validate(unified_payload).blocks
+
+    return fetch_bitable_blocks
+
+
 def convert_online_wiki_node_source(
     source: dict[str, str],
     *,
@@ -383,6 +533,8 @@ def convert_online_wiki_node_source(
     board_node_fetcher: Callable[[str], dict[str, Any]] | None = None,
     expand_sheets: bool = False,
     sheet_block_fetcher: Callable[[str], list[Block]] | None = None,
+    expand_bitable: bool = False,
+    bitable_block_fetcher: Callable[[str], list[Block]] | None = None,
 ) -> dict[str, Any] | str:
     return convert_from_feishu(
         source["payload"],
@@ -393,6 +545,8 @@ def convert_online_wiki_node_source(
         board_node_fetcher=board_node_fetcher,
         expand_sheets=expand_sheets,
         sheet_block_fetcher=sheet_block_fetcher,
+        expand_bitable=expand_bitable,
+        bitable_block_fetcher=bitable_block_fetcher,
     )
 
 
