@@ -51,8 +51,20 @@ def get_markdown(
         str,
         typer.Argument(help="Feishu wiki node_token"),
     ],
+    expand_board: Annotated[
+        bool,
+        typer.Option(
+            "--expand-board/--no-expand-board",
+            help="Expand docx board blocks (currently supports mind map)",
+        ),
+    ] = False,
 ) -> None:
-    typer.echo(get_online_markdown_raw_by_node_token_service(node_token=node_token))
+    typer.echo(
+        get_online_markdown_raw_by_node_token_service(
+            node_token=node_token,
+            expand_board=expand_board,
+        )
+    )
 
 @app.command("get-unified")
 def get_unified(
@@ -60,8 +72,16 @@ def get_unified(
         str,
         typer.Argument(help="Feishu wiki node_token"),
     ],
+    expand_board: Annotated[
+        bool,
+        typer.Option(
+            "--expand-board/--no-expand-board",
+            help="Expand docx board blocks (currently supports mind map)",
+        ),
+    ] = False,
 ) -> None:
     unified_document = get_online_unified_document_by_node_token_service(
-        node_token=node_token
+        node_token=node_token,
+        expand_board=expand_board,
     )
     typer.echo(json.dumps(unified_document.model_dump(), indent=2, ensure_ascii=False))

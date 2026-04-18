@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from collections.abc import Callable
 from typing import Any, Literal
 from urllib.parse import parse_qsl, unquote, urlencode, urlparse
 
@@ -18,14 +19,26 @@ from ...unified_doc import (
 from .docx_block_type import DOCX_BLOCK_TYPE
 from .helper import build_feishu_resource_url
 from .normalizer import normalize_title
-from .utils import extract_dict
+from .utils import convert_whiteboard_to_mermaid_code_block, extract_dict
 
 Mode = Literal["online", "offline"]
 
-def docx_to_unified(raw: dict[str, Any], mode: Mode) -> UnifiedDocument:
+def docx_to_unified(
+    raw: dict[str, Any],
+    mode: Mode,
+    *,
+    expand_board: bool = False,
+    board_node_fetcher: Callable[[str], dict[str, Any]] | None = None,
+) -> UnifiedDocument:
     blocks_dict = build_blocks_dict(raw["obj"])
     unified_blocks = [
-        convert_single_block(blocks_dict, raw["obj"][0]["block_id"], mode)
+        convert_single_block(
+            blocks_dict,
+            raw["obj"][0]["block_id"],
+            mode,
+            expand_board=expand_board,
+            board_node_fetcher=board_node_fetcher,
+        )
     ]
     image_urls, link_urls = extract_mark_urls_from_blocks(unified_blocks)
 
@@ -55,7 +68,12 @@ def build_blocks_dict(blocks: list[dict[str, Any]]) -> dict[str, dict[str, Any]]
     return blocks_dict
 
 def convert_single_block(
-    blocks_dict: dict[str, dict[str, Any]], block_id: str, mode: Mode
+    blocks_dict: dict[str, dict[str, Any]],
+    block_id: str,
+    mode: Mode,
+    *,
+    expand_board: bool = False,
+    board_node_fetcher: Callable[[str], dict[str, Any]] | None = None,
 ) -> Block:
     block = blocks_dict[block_id]
     block_type = block["block_type"]
@@ -67,7 +85,13 @@ def convert_single_block(
 
     children: list[Block] = []
     if "children" in block:
-        children = convert_blocks(blocks_dict, block["children"], mode)
+        children = convert_blocks(
+            blocks_dict,
+            block["children"],
+            mode,
+            expand_board=expand_board,
+            board_node_fetcher=board_node_fetcher,
+        )
 
     if block_name == "页面":
         return Block(type=BlockType.Passthrough, inlines=[], children=children)
@@ -474,6 +498,13 @@ def convert_single_block(
         )
 
     if block_name == "画板":
+        if expand_board and board_node_fetcher is not None:
+            board_token = block["board"]["token"]
+            board_data = board_node_fetcher(board_token)
+            board_block = convert_whiteboard_to_mermaid_code_block(board_data)
+            board_block.children = [*board_block.children, *children]
+            return board_block
+
         url = build_feishu_resource_url(
             _asset_path(mode, "board"),
             {
@@ -515,9 +546,23 @@ def convert_single_block(
     raise Exception(f"Unsupport block_type {block_type} {block_name}")
 
 def convert_blocks(
-    blocks_dict: dict[str, dict[str, Any]], ids_list: list[str], mode: Mode
+    blocks_dict: dict[str, dict[str, Any]],
+    ids_list: list[str],
+    mode: Mode,
+    *,
+    expand_board: bool = False,
+    board_node_fetcher: Callable[[str], dict[str, Any]] | None = None,
 ) -> list[Block]:
-    return [convert_single_block(blocks_dict, block_id, mode) for block_id in ids_list]
+    return [
+        convert_single_block(
+            blocks_dict,
+            block_id,
+            mode,
+            expand_board=expand_board,
+            board_node_fetcher=board_node_fetcher,
+        )
+        for block_id in ids_list
+    ]
 
 def convert_inline_text_run(text_run: dict[str, Any], mode: Mode) -> InlineText:
     marks: list[Mark] = []
