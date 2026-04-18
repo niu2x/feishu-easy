@@ -6,6 +6,49 @@ from typing import Any
 from ..feishu_api import FeishuAPI
 from .errors import ServiceValidationError
 
+def create_plantuml_whiteboard_node(
+    whiteboard_id: str,
+    plant_uml_code: str,
+    *,
+    style_type: int | None = None,
+    syntax_type: int | None = None,
+    diagram_type: int | None = None,
+    overwrite: bool | None = None,
+    parse_mode: int | None = None,
+) -> dict[str, Any]:
+    return _create_plantuml_whiteboard_node(
+        whiteboard_id,
+        plant_uml_code,
+        style_type=style_type,
+        syntax_type=syntax_type,
+        diagram_type=diagram_type,
+        overwrite=overwrite,
+        parse_mode=parse_mode,
+        api=FeishuAPI(),
+    )
+
+def _create_plantuml_whiteboard_node(
+    whiteboard_id: str,
+    plant_uml_code: str,
+    *,
+    style_type: int | None = None,
+    syntax_type: int | None = None,
+    diagram_type: int | None = None,
+    overwrite: bool | None = None,
+    parse_mode: int | None = None,
+    api: FeishuAPI,
+) -> dict[str, Any]:
+    feishu_api = api
+    return feishu_api.board.create_plantuml_whiteboard_node(
+        whiteboard_id=whiteboard_id,
+        plant_uml_code=plant_uml_code,
+        style_type=style_type,
+        syntax_type=syntax_type,
+        diagram_type=diagram_type,
+        overwrite=overwrite,
+        parse_mode=parse_mode,
+    )
+
 def list_whiteboard_node(
     whiteboard_id: str,
     user_id_type: str = "open_id",
