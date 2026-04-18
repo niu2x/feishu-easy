@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from collections.abc import Callable
 from typing import Any, Literal
 
 from ..unified_doc import (
@@ -28,6 +29,8 @@ def convert_from_feishu(
     source_type: SourceType,
     target_type: TargetType,
     mode: Mode,
+    expand_board: bool = False,
+    board_node_fetcher: Callable[[str], dict[str, Any]] | None = None,
 ) -> dict[str, Any] | str:
     try:
         payload = json.loads(raw_content)
@@ -45,7 +48,12 @@ def convert_from_feishu(
             raise ServiceValidationError(
                 "docx blocks are empty, cannot convert to unified"
             )
-        result = docx_to_unified(normalized, mode)
+        result = docx_to_unified(
+            normalized,
+            mode,
+            expand_board=expand_board,
+            board_node_fetcher=board_node_fetcher,
+        )
     elif source_type == "sheet":
         result = sheet_to_unified(normalized)
     elif source_type == "bitable":
@@ -64,11 +72,19 @@ def get_online_unified_document_by_node_token(
     node_token: str,
     *,
     api: FeishuAPI | None = None,
+    expand_board: bool = False,
 ) -> UnifiedDocument:
     feishu_api = api or FeishuAPI()
 
     source = get_online_wiki_node_source_by_node_token(node_token, api=feishu_api)
-    unified_payload = convert_online_wiki_node_source(source, target_type="unified")
+    unified_payload = convert_online_wiki_node_source(
+        source,
+        target_type="unified",
+        expand_board=expand_board,
+        board_node_fetcher=(
+            feishu_api.board.list_whiteboard_node if expand_board else None
+        ),
+    )
     if not isinstance(unified_payload, dict):
         raise ServiceError("Unexpected conversion result for unified document")
     return UnifiedDocument.model_validate(unified_payload)
@@ -78,11 +94,19 @@ def get_online_markdown_raw_by_node_token(
     node_token: str,
     *,
     api: FeishuAPI | None = None,
+    expand_board: bool = False,
 ) -> str:
     feishu_api = api or FeishuAPI()
 
     source = get_online_wiki_node_source_by_node_token(node_token, api=feishu_api)
-    markdown = convert_online_wiki_node_source(source, target_type="markdown")
+    markdown = convert_online_wiki_node_source(
+        source,
+        target_type="markdown",
+        expand_board=expand_board,
+        board_node_fetcher=(
+            feishu_api.board.list_whiteboard_node if expand_board else None
+        ),
+    )
     if not isinstance(markdown, str):
         raise ServiceError("Unexpected conversion result for markdown")
     return markdown
@@ -320,13 +344,19 @@ def _list_bitable_table_resources(
 
 
 def convert_online_wiki_node_source(
-    source: dict[str, str], *, target_type: TargetType
+    source: dict[str, str],
+    *,
+    target_type: TargetType,
+    expand_board: bool = False,
+    board_node_fetcher: Callable[[str], dict[str, Any]] | None = None,
 ) -> dict[str, Any] | str:
     return convert_from_feishu(
         source["payload"],
         source_type=source["obj_type"],
         target_type=target_type,
         mode="online",
+        expand_board=expand_board,
+        board_node_fetcher=board_node_fetcher,
     )
 
 
