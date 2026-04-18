@@ -9,10 +9,20 @@ from .errors import ServiceValidationError
 def list_whiteboard_node(
     whiteboard_id: str,
     user_id_type: str = "open_id",
-    *,
-    api: FeishuAPI | None = None,
 ) -> dict[str, Any]:
-    feishu_api = api or FeishuAPI()
+    return _list_whiteboard_node(
+        whiteboard_id,
+        user_id_type=user_id_type,
+        api=FeishuAPI(),
+    )
+
+def _list_whiteboard_node(
+    whiteboard_id: str,
+    user_id_type: str = "open_id",
+    *,
+    api: FeishuAPI,
+) -> dict[str, Any]:
+    feishu_api = api
     return feishu_api.board.list_whiteboard_node(
         whiteboard_id=whiteboard_id,
         user_id_type=user_id_type,
@@ -22,10 +32,22 @@ def download_whiteboard_as_image(
     whiteboard_id: str,
     output_dir: Path = Path("."),
     file_name: str | None = None,
-    *,
-    api: FeishuAPI | None = None,
 ) -> dict[str, Any]:
-    feishu_api = api or FeishuAPI()
+    return _download_whiteboard_as_image(
+        whiteboard_id,
+        output_dir=output_dir,
+        file_name=file_name,
+        api=FeishuAPI(),
+    )
+
+def _download_whiteboard_as_image(
+    whiteboard_id: str,
+    output_dir: Path = Path("."),
+    file_name: str | None = None,
+    *,
+    api: FeishuAPI,
+) -> dict[str, Any]:
+    feishu_api = api
     content = feishu_api.board.download_as_image_whiteboard(whiteboard_id=whiteboard_id)
 
     output_dir.mkdir(parents=True, exist_ok=True)

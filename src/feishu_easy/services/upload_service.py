@@ -257,8 +257,8 @@ def _replace_document_images(
         )
 
 class MarkdownUploadFlow:
-    def __init__(self, api: FeishuAPI | None = None) -> None:
-        self.api = api or FeishuAPI()
+    def __init__(self, api: FeishuAPI) -> None:
+        self.api = api
 
     def upload(
         self, markdown_file: Path, node_token: str, skip_failed_images: bool = False
@@ -312,8 +312,20 @@ def upload_markdown(
     markdown_file: Path,
     node_token: str,
     skip_failed_images: bool = False,
+) -> tuple[str, int]:
+    return _upload_markdown(
+        markdown_file,
+        node_token,
+        skip_failed_images=skip_failed_images,
+        api=FeishuAPI(),
+    )
+
+def _upload_markdown(
+    markdown_file: Path,
+    node_token: str,
+    skip_failed_images: bool = False,
     *,
-    api: FeishuAPI | None = None,
+    api: FeishuAPI,
 ) -> tuple[str, int]:
     flow = MarkdownUploadFlow(api=api)
     return flow.upload(

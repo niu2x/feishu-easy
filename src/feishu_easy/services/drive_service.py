@@ -11,10 +11,24 @@ def list_drive_file(
     order_by: str | None = None,
     direction: str | None = None,
     user_id_type: str | None = None,
-    *,
-    api: FeishuAPI | None = None,
 ) -> dict[str, Any]:
-    feishu_api = api or FeishuAPI()
+    return _list_drive_file(
+        folder_token=folder_token,
+        order_by=order_by,
+        direction=direction,
+        user_id_type=user_id_type,
+        api=FeishuAPI(),
+    )
+
+def _list_drive_file(
+    folder_token: str | None = None,
+    order_by: str | None = None,
+    direction: str | None = None,
+    user_id_type: str | None = None,
+    *,
+    api: FeishuAPI,
+) -> dict[str, Any]:
+    feishu_api = api
     return feishu_api.drive.list_file(
         folder_token=folder_token,
         order_by=order_by,
@@ -25,20 +39,38 @@ def list_drive_file(
 def delete_drive_file(
     file_token: str,
     file_type: str = "file",
-    *,
-    api: FeishuAPI | None = None,
 ) -> dict[str, Any]:
-    feishu_api = api or FeishuAPI()
+    return _delete_drive_file(file_token, file_type=file_type, api=FeishuAPI())
+
+def _delete_drive_file(
+    file_token: str,
+    file_type: str = "file",
+    *,
+    api: FeishuAPI,
+) -> dict[str, Any]:
+    feishu_api = api
     return feishu_api.drive.delete_file(file_token=file_token, file_type=file_type)
 
 def batch_query_drive_meta(
     request_docs: list[tuple[str, str]],
     with_url: bool = True,
     user_id_type: str | None = None,
-    *,
-    api: FeishuAPI | None = None,
 ) -> dict[str, Any]:
-    feishu_api = api or FeishuAPI()
+    return _batch_query_drive_meta(
+        request_docs,
+        with_url=with_url,
+        user_id_type=user_id_type,
+        api=FeishuAPI(),
+    )
+
+def _batch_query_drive_meta(
+    request_docs: list[tuple[str, str]],
+    with_url: bool = True,
+    user_id_type: str | None = None,
+    *,
+    api: FeishuAPI,
+) -> dict[str, Any]:
+    feishu_api = api
     return feishu_api.drive.batch_query_meta(
         request_docs=request_docs,
         with_url=with_url,
@@ -48,10 +80,16 @@ def batch_query_drive_meta(
 def get_drive_file_statistics(
     file_token: str,
     file_type: str = "file",
-    *,
-    api: FeishuAPI | None = None,
 ) -> dict[str, Any]:
-    feishu_api = api or FeishuAPI()
+    return _get_drive_file_statistics(file_token, file_type=file_type, api=FeishuAPI())
+
+def _get_drive_file_statistics(
+    file_token: str,
+    file_type: str = "file",
+    *,
+    api: FeishuAPI,
+) -> dict[str, Any]:
+    feishu_api = api
     return feishu_api.drive.get_file_statistics(
         file_token=file_token, file_type=file_type
     )
@@ -61,10 +99,24 @@ def list_drive_file_view_record(
     file_type: str = "file",
     viewer_id_type: str | None = "open_id",
     page_size: int | None = None,
-    *,
-    api: FeishuAPI | None = None,
 ) -> dict[str, Any]:
-    feishu_api = api or FeishuAPI()
+    return _list_drive_file_view_record(
+        file_token,
+        file_type=file_type,
+        viewer_id_type=viewer_id_type,
+        page_size=page_size,
+        api=FeishuAPI(),
+    )
+
+def _list_drive_file_view_record(
+    file_token: str,
+    file_type: str = "file",
+    viewer_id_type: str | None = "open_id",
+    page_size: int | None = None,
+    *,
+    api: FeishuAPI,
+) -> dict[str, Any]:
+    feishu_api = api
     return feishu_api.drive.list_file_view_record(
         file_token=file_token,
         file_type=file_type,
@@ -77,10 +129,24 @@ def list_drive_file_version(
     obj_type: str,
     page_size: int | None = None,
     user_id_type: str | None = None,
-    *,
-    api: FeishuAPI | None = None,
 ) -> dict[str, Any]:
-    feishu_api = api or FeishuAPI()
+    return _list_drive_file_version(
+        file_token,
+        obj_type,
+        page_size=page_size,
+        user_id_type=user_id_type,
+        api=FeishuAPI(),
+    )
+
+def _list_drive_file_version(
+    file_token: str,
+    obj_type: str,
+    page_size: int | None = None,
+    user_id_type: str | None = None,
+    *,
+    api: FeishuAPI,
+) -> dict[str, Any]:
+    feishu_api = api
     return feishu_api.drive.list_file_version(
         file_token=file_token,
         obj_type=obj_type,
@@ -95,10 +161,28 @@ def copy_drive_file(
     name: str | None = None,
     user_id_type: str | None = None,
     extra: dict[str, Any] | None = None,
-    *,
-    api: FeishuAPI | None = None,
 ) -> dict[str, Any]:
-    feishu_api = api or FeishuAPI()
+    return _copy_drive_file(
+        file_token,
+        file_type=file_type,
+        folder_token=folder_token,
+        name=name,
+        user_id_type=user_id_type,
+        extra=extra,
+        api=FeishuAPI(),
+    )
+
+def _copy_drive_file(
+    file_token: str,
+    file_type: str = "file",
+    folder_token: str | None = None,
+    name: str | None = None,
+    user_id_type: str | None = None,
+    extra: dict[str, Any] | None = None,
+    *,
+    api: FeishuAPI,
+) -> dict[str, Any]:
+    feishu_api = api
     return feishu_api.drive.copy_file(
         file_token=file_token,
         file_type=file_type,
@@ -112,10 +196,22 @@ def move_drive_file(
     file_token: str,
     file_type: str = "file",
     folder_token: str | None = None,
-    *,
-    api: FeishuAPI | None = None,
 ) -> dict[str, Any]:
-    feishu_api = api or FeishuAPI()
+    return _move_drive_file(
+        file_token,
+        file_type=file_type,
+        folder_token=folder_token,
+        api=FeishuAPI(),
+    )
+
+def _move_drive_file(
+    file_token: str,
+    file_type: str = "file",
+    folder_token: str | None = None,
+    *,
+    api: FeishuAPI,
+) -> dict[str, Any]:
+    feishu_api = api
     return feishu_api.drive.move_file(
         file_token=file_token,
         file_type=file_type,
@@ -126,10 +222,22 @@ def upload_drive_file(
     local_file: Path,
     folder_token: str,
     file_name: str | None = None,
-    *,
-    api: FeishuAPI | None = None,
 ) -> dict[str, Any]:
-    feishu_api = api or FeishuAPI()
+    return _upload_drive_file(
+        local_file,
+        folder_token,
+        file_name=file_name,
+        api=FeishuAPI(),
+    )
+
+def _upload_drive_file(
+    local_file: Path,
+    folder_token: str,
+    file_name: str | None = None,
+    *,
+    api: FeishuAPI,
+) -> dict[str, Any]:
+    feishu_api = api
     return feishu_api.drive.upload_file(
         local_file=local_file,
         folder_token=folder_token,
@@ -140,10 +248,22 @@ def download_drive_file(
     file_token: str,
     output_dir: Path = Path("."),
     file_name: str | None = None,
-    *,
-    api: FeishuAPI | None = None,
 ) -> dict[str, Any]:
-    feishu_api = api or FeishuAPI()
+    return _download_drive_file(
+        file_token,
+        output_dir=output_dir,
+        file_name=file_name,
+        api=FeishuAPI(),
+    )
+
+def _download_drive_file(
+    file_token: str,
+    output_dir: Path = Path("."),
+    file_name: str | None = None,
+    *,
+    api: FeishuAPI,
+) -> dict[str, Any]:
+    feishu_api = api
     remote_file_name, content = feishu_api.drive.download_file(file_token=file_token)
 
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -165,10 +285,22 @@ def download_drive_media(
     file_token: str,
     output_dir: Path = Path("."),
     file_name: str | None = None,
-    *,
-    api: FeishuAPI | None = None,
 ) -> dict[str, Any]:
-    feishu_api = api or FeishuAPI()
+    return _download_drive_media(
+        file_token,
+        output_dir=output_dir,
+        file_name=file_name,
+        api=FeishuAPI(),
+    )
+
+def _download_drive_media(
+    file_token: str,
+    output_dir: Path = Path("."),
+    file_name: str | None = None,
+    *,
+    api: FeishuAPI,
+) -> dict[str, Any]:
+    feishu_api = api
     remote_file_name, content = feishu_api.drive.download_media(file_token=file_token)
 
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -190,10 +322,22 @@ def subscribe_drive_file(
     file_token: str,
     file_type: str,
     event_type: str,
-    *,
-    api: FeishuAPI | None = None,
 ) -> dict[str, Any]:
-    feishu_api = api or FeishuAPI()
+    return _subscribe_drive_file(
+        file_token,
+        file_type,
+        event_type,
+        api=FeishuAPI(),
+    )
+
+def _subscribe_drive_file(
+    file_token: str,
+    file_type: str,
+    event_type: str,
+    *,
+    api: FeishuAPI,
+) -> dict[str, Any]:
+    feishu_api = api
     return feishu_api.drive.subscribe_file(
         file_token=file_token,
         file_type=file_type,
@@ -204,10 +348,22 @@ def delete_subscribe_drive_file(
     file_token: str,
     file_type: str,
     event_type: str,
-    *,
-    api: FeishuAPI | None = None,
 ) -> dict[str, Any]:
-    feishu_api = api or FeishuAPI()
+    return _delete_subscribe_drive_file(
+        file_token,
+        file_type,
+        event_type,
+        api=FeishuAPI(),
+    )
+
+def _delete_subscribe_drive_file(
+    file_token: str,
+    file_type: str,
+    event_type: str,
+    *,
+    api: FeishuAPI,
+) -> dict[str, Any]:
+    feishu_api = api
     return feishu_api.drive.delete_subscribe_file(
         file_token=file_token,
         file_type=file_type,
@@ -218,10 +374,22 @@ def get_subscribe_drive_file(
     file_token: str,
     file_type: str,
     event_type: str,
-    *,
-    api: FeishuAPI | None = None,
 ) -> dict[str, Any]:
-    feishu_api = api or FeishuAPI()
+    return _get_subscribe_drive_file(
+        file_token,
+        file_type,
+        event_type,
+        api=FeishuAPI(),
+    )
+
+def _get_subscribe_drive_file(
+    file_token: str,
+    file_type: str,
+    event_type: str,
+    *,
+    api: FeishuAPI,
+) -> dict[str, Any]:
+    feishu_api = api
     return feishu_api.drive.get_subscribe_file(
         file_token=file_token,
         file_type=file_type,

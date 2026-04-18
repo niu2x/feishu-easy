@@ -8,10 +8,20 @@ from .errors import ServiceError, ServiceValidationError
 def get_spreadsheet_sheet(
     spreadsheet_token: str,
     sheet_id: str,
-    *,
-    api: FeishuAPI | None = None,
 ) -> dict[str, Any]:
-    feishu_api = api or FeishuAPI()
+    return _get_spreadsheet_sheet(
+        spreadsheet_token,
+        sheet_id,
+        api=FeishuAPI(),
+    )
+
+def _get_spreadsheet_sheet(
+    spreadsheet_token: str,
+    sheet_id: str,
+    *,
+    api: FeishuAPI,
+) -> dict[str, Any]:
+    feishu_api = api
     return feishu_api.sheets.get_spreadsheet_sheet(
         spreadsheet_token=spreadsheet_token,
         sheet_id=sheet_id,
@@ -19,10 +29,15 @@ def get_spreadsheet_sheet(
 
 def query_spreadsheet_sheet(
     spreadsheet_token: str,
-    *,
-    api: FeishuAPI | None = None,
 ) -> dict[str, Any]:
-    feishu_api = api or FeishuAPI()
+    return _query_spreadsheet_sheet(spreadsheet_token, api=FeishuAPI())
+
+def _query_spreadsheet_sheet(
+    spreadsheet_token: str,
+    *,
+    api: FeishuAPI,
+) -> dict[str, Any]:
+    feishu_api = api
     return feishu_api.sheets.query_spreadsheet_sheet(
         spreadsheet_token=spreadsheet_token
     )
@@ -30,10 +45,20 @@ def query_spreadsheet_sheet(
 def get_spreadsheet(
     spreadsheet_token: str,
     user_id_type: str | None = None,
-    *,
-    api: FeishuAPI | None = None,
 ) -> dict[str, Any]:
-    feishu_api = api or FeishuAPI()
+    return _get_spreadsheet(
+        spreadsheet_token,
+        user_id_type=user_id_type,
+        api=FeishuAPI(),
+    )
+
+def _get_spreadsheet(
+    spreadsheet_token: str,
+    user_id_type: str | None = None,
+    *,
+    api: FeishuAPI,
+) -> dict[str, Any]:
+    feishu_api = api
     return feishu_api.sheets.get_spreadsheet(
         spreadsheet_token=spreadsheet_token,
         user_id_type=user_id_type,
@@ -43,10 +68,22 @@ def get_spreadsheet_metainfo(
     spreadsheet_token: str,
     ext_fields: str | None = None,
     user_id_type: str | None = None,
-    *,
-    api: FeishuAPI | None = None,
 ) -> dict[str, Any]:
-    feishu_api = api or FeishuAPI()
+    return _get_spreadsheet_metainfo(
+        spreadsheet_token,
+        ext_fields=ext_fields,
+        user_id_type=user_id_type,
+        api=FeishuAPI(),
+    )
+
+def _get_spreadsheet_metainfo(
+    spreadsheet_token: str,
+    ext_fields: str | None = None,
+    user_id_type: str | None = None,
+    *,
+    api: FeishuAPI,
+) -> dict[str, Any]:
+    feishu_api = api
     return feishu_api.sheets.get_spreadsheet_metainfo(
         spreadsheet_token=spreadsheet_token,
         ext_fields=ext_fields,
@@ -56,10 +93,16 @@ def get_spreadsheet_metainfo(
 def create_spreadsheet(
     title: str,
     folder_token: str | None = None,
-    *,
-    api: FeishuAPI | None = None,
 ) -> dict[str, Any]:
-    feishu_api = api or FeishuAPI()
+    return _create_spreadsheet(title, folder_token=folder_token, api=FeishuAPI())
+
+def _create_spreadsheet(
+    title: str,
+    folder_token: str | None = None,
+    *,
+    api: FeishuAPI,
+) -> dict[str, Any]:
+    feishu_api = api
     return feishu_api.sheets.create_spreadsheet(title=title, folder_token=folder_token)
 
 def get_sheet_values(
@@ -67,10 +110,24 @@ def get_sheet_values(
     value_range: str,
     value_render_option: str | None = None,
     date_time_render_option: str | None = None,
-    *,
-    api: FeishuAPI | None = None,
 ) -> dict[str, Any]:
-    feishu_api = api or FeishuAPI()
+    return _get_sheet_values(
+        spreadsheet_token,
+        value_range,
+        value_render_option=value_render_option,
+        date_time_render_option=date_time_render_option,
+        api=FeishuAPI(),
+    )
+
+def _get_sheet_values(
+    spreadsheet_token: str,
+    value_range: str,
+    value_render_option: str | None = None,
+    date_time_render_option: str | None = None,
+    *,
+    api: FeishuAPI,
+) -> dict[str, Any]:
+    feishu_api = api
     return feishu_api.sheets.get_sheet_values(
         spreadsheet_token=spreadsheet_token,
         value_range=value_range,
@@ -92,10 +149,16 @@ def _num_to_col(num: int) -> str:
 def get_sheet_content(
     spreadsheet_token: str,
     sheet_id: str,
-    *,
-    api: FeishuAPI | None = None,
 ) -> dict[str, Any]:
-    feishu_api = api or FeishuAPI()
+    return _get_sheet_content(spreadsheet_token, sheet_id, api=FeishuAPI())
+
+def _get_sheet_content(
+    spreadsheet_token: str,
+    sheet_id: str,
+    *,
+    api: FeishuAPI,
+) -> dict[str, Any]:
+    feishu_api = api
     sheet_payload = feishu_api.sheets.get_spreadsheet_sheet(
         spreadsheet_token=spreadsheet_token,
         sheet_id=sheet_id,
@@ -132,10 +195,15 @@ def get_sheet_content(
 
 def list_spreadsheet_sheet_resources(
     spreadsheet_token: str,
-    *,
-    api: FeishuAPI | None = None,
 ) -> list[dict[str, Any]]:
-    feishu_api = api or FeishuAPI()
+    return _list_spreadsheet_sheet_resources(spreadsheet_token, api=FeishuAPI())
+
+def _list_spreadsheet_sheet_resources(
+    spreadsheet_token: str,
+    *,
+    api: FeishuAPI,
+) -> list[dict[str, Any]]:
+    feishu_api = api
     spreadsheet_data = feishu_api.sheets.query_spreadsheet_sheet(
         spreadsheet_token=spreadsheet_token,
     )
