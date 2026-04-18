@@ -13,13 +13,15 @@ import mistletoe
 from mistletoe import Document
 from mistletoe.utils import traverse
 
-from ..feishu_api import FeishuAPI
+from ..feishu_api import FeishuAPI, FeishuAPIError
 from .errors import ServiceError, ServiceValidationError
 
 IMAGE_BLOCK_TYPE = 27
 TABLE_BLOCK_TYPE = 31
 CODE_BLOCK_TYPE = 14
 BOARD_BLOCK_TYPE = 43
+DOCX_DESCENDANT_CREATE_ACTION = "client.docx.v1.document_block_descendant.create"
+RESOURCE_COUNT_EXCEEDED_ERROR_CODE = 1770035
 
 
 def _collect_descendants(
@@ -55,7 +57,7 @@ def _build_block_map(descendants: list[dict[str, Any]]) -> dict[str, dict[str, A
 
 
 def _split_descendant_request(
-    request_body: dict[str, Any], max_descendants: int = 1000
+    request_body: dict[str, Any], max_descendants: int = 512
 ) -> list[dict[str, Any]]:
     if len(request_body["descendants"]) <= max_descendants:
         block_map = _build_block_map(request_body["descendants"])
@@ -74,21 +76,19 @@ def _split_descendant_request(
     block_map = _build_block_map(request_body["descendants"])
 
     left_request = {
-        "index": 0,
+        "index": -1,
         "children_id": left_ids,
         "descendants": _collect_descendants(left_ids, block_map),
     }
     right_request = {
-        "index": 0,
+        "index": -1,
         "children_id": right_ids,
         "descendants": _collect_descendants(right_ids, block_map),
     }
 
-    requests = _split_descendant_request(left_request) + _split_descendant_request(
-        right_request
+    requests = _split_descendant_request(left_request, max_descendants) + _split_descendant_request(
+        right_request, max_descendants
     )
-    for index, req in enumerate(requests):
-        req["index"] = index
     return requests
 
 
@@ -349,11 +349,28 @@ def _clear_document_children(api: FeishuAPI, document_id: str) -> None:
 def _create_descendants(
     api: FeishuAPI, document_id: str, request_body: dict[str, Any]
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
-    requests = _split_descendant_request(request_body)
+    pending_requests = _split_descendant_request(request_body)
+    requests: list[dict[str, Any]] = []
     block_id_relations: list[dict[str, Any]] = []
-    for req in requests:
-        ret = api.docx.create_document_block_descendant(document_id, document_id, req)
+    while pending_requests:
+        req = pending_requests.pop(0)
+        try:
+            ret = api.docx.create_document_block_descendant(document_id, document_id, req)
+        except FeishuAPIError as exc:
+            if (
+                exc.action != DOCX_DESCENDANT_CREATE_ACTION
+                or exc.code != RESOURCE_COUNT_EXCEEDED_ERROR_CODE
+            ):
+                raise
 
+            split_max_descendants = max(1, len(req["descendants"]) // 2)
+            split_requests = _split_descendant_request(req, split_max_descendants)
+            if len(split_requests) <= 1:
+                raise
+            pending_requests = split_requests + pending_requests
+            continue
+
+        requests.append(req)
         block_id_relations.extend(ret["block_id_relations"])
     return requests, block_id_relations
 

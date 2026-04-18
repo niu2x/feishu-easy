@@ -11,6 +11,7 @@ from tenacity import (
     wait_exponential,
 )
 
+from json import JSONDecodeError
 from .errors import FeishuRateLimitError
 
 
@@ -37,7 +38,7 @@ def call_with_retry(
         stop=stop_after_attempt(16),
         wait=wait_exponential(multiplier=1, min=1, max=120),
         retry=retry_if_exception_type(
-            (FeishuRateLimitError, ConnectionError, TimeoutError)
+            (JSONDecodeError, FeishuRateLimitError, ConnectionError, TimeoutError)
         ),
         before_sleep=before_sleep_log,
         reraise=True,
