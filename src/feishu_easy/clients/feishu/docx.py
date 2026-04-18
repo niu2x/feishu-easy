@@ -87,6 +87,7 @@ class FeishuDocxAPI(_BaseAPIGroup):
     def create_document_block_descendant(
         self, document_id: str, block_id: str, request_body: dict[str, Any]
     ) -> dict[str, Any]:
+
         option = self._request_option()
         request = (
             CreateDocumentBlockDescendantRequest.builder()

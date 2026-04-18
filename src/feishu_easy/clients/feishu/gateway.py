@@ -96,7 +96,7 @@ class FeishuAPI:
             return
 
         error_message = self._response_error_message(action, response)
-        lark.logger.error(error_message)
+        # lark.logger.error(error_message)
 
         if response.code in FEISHU_RATE_LIMIT_ERROR_CODES:
             raise FeishuRateLimitError(
