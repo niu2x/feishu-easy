@@ -18,6 +18,8 @@ from .errors import ServiceError, ServiceValidationError
 
 IMAGE_BLOCK_TYPE = 27
 TABLE_BLOCK_TYPE = 31
+CODE_BLOCK_TYPE = 14
+BOARD_BLOCK_TYPE = 43
 
 
 def _collect_descendants(
@@ -168,6 +170,150 @@ def _collect_image_block_ids(request_body: dict[str, Any]) -> list[str]:
     return image_block_ids
 
 
+def _collect_code_block_ids(request_body: dict[str, Any]) -> list[str]:
+    code_block_ids: list[str] = []
+    block_map = _build_block_map(request_body["descendants"])
+
+    todo_ids = list(request_body["children_id"])
+    todo_ids.reverse()
+    while todo_ids:
+        block_id = todo_ids.pop()
+        block = block_map[block_id]
+
+        if block.get("block_type") == CODE_BLOCK_TYPE:
+            code_block_ids.append(block["block_id"])
+
+        children = list(block.get("children", []))
+        children.reverse()
+        todo_ids.extend(children)
+
+    return code_block_ids
+
+
+def _extract_markdown_code_blocks(content: str) -> list[tuple[str, str]]:
+    code_blocks: list[tuple[str, str]] = []
+
+    for cursor in traverse(Document(content)):
+        node = cursor.node
+        if not isinstance(
+            node,
+            (
+                mistletoe.block_token.CodeFence,
+                mistletoe.block_token.BlockCode,
+            ),
+        ):
+            continue
+
+        language = (getattr(node, "language", "") or "").strip().lower()
+        code_parts: list[str] = []
+        for child in getattr(node, "children", ()):  # pragma: no branch
+            part = getattr(child, "content", None)
+            if isinstance(part, str):
+                code_parts.append(part)
+        code_blocks.append((language, "".join(code_parts)))
+
+    return code_blocks
+
+
+def _normalize_code_content(text: str) -> str:
+    return text.replace("\r\n", "\n").strip("\n")
+
+
+def _extract_docx_code_block_content(block: dict[str, Any]) -> str:
+    elements = block.get("code", {}).get("elements", [])
+    if not isinstance(elements, list):
+        return ""
+
+    chunks: list[str] = []
+    for element in elements:
+        if not isinstance(element, dict):
+            continue
+        text_run = element.get("text_run")
+        if not isinstance(text_run, dict):
+            continue
+        content = text_run.get("content")
+        if isinstance(content, str):
+            chunks.append(content)
+    return "".join(chunks)
+
+
+def _resolve_mermaid_code_targets(
+    markdown_content: str,
+    request_body: dict[str, Any],
+) -> list[tuple[str, str]]:
+    markdown_code_blocks = _extract_markdown_code_blocks(markdown_content)
+    mermaid_codes = [
+        code
+        for language, code in markdown_code_blocks
+        if language in {"mermaid", "mmd"}
+    ]
+    if not mermaid_codes:
+        return []
+
+    code_block_ids = _collect_code_block_ids(request_body)
+    if not code_block_ids:
+        raise ServiceError("Mermaid code blocks found in markdown but no code blocks in conversion result")
+
+    if len(markdown_code_blocks) == len(code_block_ids):
+        targets: list[tuple[str, str]] = []
+        for index, (_, code) in enumerate(markdown_code_blocks):
+            language = markdown_code_blocks[index][0]
+            if language in {"mermaid", "mmd"}:
+                targets.append((code_block_ids[index], code))
+        return targets
+
+    descendants_map = _build_block_map(request_body["descendants"])
+    code_candidates = [
+        (
+            block_id,
+            _normalize_code_content(
+                _extract_docx_code_block_content(descendants_map[block_id])
+            ),
+        )
+        for block_id in code_block_ids
+    ]
+
+    targets = []
+    cursor = 0
+    for mermaid_code in mermaid_codes:
+        target = _normalize_code_content(mermaid_code)
+        found: tuple[str, str] | None = None
+        for idx in range(cursor, len(code_candidates)):
+            if code_candidates[idx][1] == target:
+                found = (code_candidates[idx][0], mermaid_code)
+                cursor = idx + 1
+                break
+        if found is None:
+            raise ServiceError(
+                "Failed to match Mermaid code block between markdown and conversion result"
+            )
+        targets.append(found)
+
+    return targets
+
+
+def _replace_mermaid_code_blocks_with_board(
+    request_body: dict[str, Any],
+    mermaid_targets: list[tuple[str, str]],
+) -> None:
+    target_ids = {block_id for block_id, _ in mermaid_targets}
+    if not target_ids:
+        return
+
+    descendants = request_body["descendants"]
+    for index, block in enumerate(descendants):
+        block_id = block.get("block_id")
+        if block_id not in target_ids:
+            continue
+        children = list(block.get("children", []))
+        descendants[index] = {
+            "block_id": block_id,
+            "block_type": BOARD_BLOCK_TYPE,
+            "children": children,
+            "board": {},
+        }
+
+
 def _resolve_document_id(api: FeishuAPI, node_token: str) -> str:
     node = api.wiki.get_node(node_token)
     if node["obj_type"] != "docx":
@@ -221,18 +367,61 @@ def _build_block_id_relations_map(
     }
 
 
-def _resolve_real_image_blocks(
-    image_block_ids: list[str], block_id_relations_map: dict[str, str]
+def _resolve_real_blocks(
+    temporary_block_ids: list[str],
+    block_id_relations_map: dict[str, str],
+    *,
+    block_kind: str,
 ) -> list[str]:
     real_block_ids: list[str] = []
-    for temporary_block_id in image_block_ids:
+    for temporary_block_id in temporary_block_ids:
         real_block_id = block_id_relations_map.get(temporary_block_id)
         if real_block_id is None:
             raise ServiceError(
-                f"Missing block relation for image block: {temporary_block_id}"
+                f"Missing block relation for {block_kind}: {temporary_block_id}"
             )
         real_block_ids.append(real_block_id)
     return real_block_ids
+
+
+def _extract_board_token(get_block_payload: dict[str, Any]) -> str:
+    block = get_block_payload.get("block")
+    if not isinstance(block, dict):
+        raise ServiceError("get_document_block response missing 'block'")
+
+    board = block.get("board")
+    if not isinstance(board, dict):
+        raise ServiceError("get_document_block response missing board payload")
+
+    token = board.get("token")
+    if not isinstance(token, str) or not token:
+        raise ServiceError("Board token is missing from block payload")
+
+    return token
+
+
+def _replace_document_mermaid_board_nodes(
+    api: FeishuAPI,
+    document_id: str,
+    board_real_blocks: list[str],
+    mermaid_targets: list[tuple[str, str]],
+) -> None:
+    if len(board_real_blocks) != len(mermaid_targets):
+        raise ServiceError("Mermaid board block count does not match replacement targets")
+
+    for block_id, (_, mermaid_code) in zip(board_real_blocks, mermaid_targets, strict=True):
+        block_payload = api.docx.get_document_block(
+            document_id=document_id,
+            block_id=block_id,
+        )
+        board_token = _extract_board_token(block_payload)
+        api.board.create_plantuml_whiteboard_node(
+            whiteboard_id=board_token,
+            plant_uml_code=mermaid_code,
+            style_type=1,
+            syntax_type=2,
+            diagram_type=0,
+        )
 
 
 def _replace_document_images(
@@ -296,6 +485,8 @@ class MarkdownUploadFlow:
                 content_type="markdown",
             )
             request_body = _build_descendant_request_body(converted)
+            mermaid_targets = _resolve_mermaid_code_targets(content, request_body)
+            _replace_mermaid_code_blocks_with_board(request_body, mermaid_targets)
 
             _clear_document_children(self.api, document_id)
 
@@ -309,15 +500,29 @@ class MarkdownUploadFlow:
             self.api.wiki.update_node_title(node_token, markdown_file.stem)
 
             block_id_relations_map = _build_block_id_relations_map(block_id_relations)
-            image_real_blocks = _resolve_real_image_blocks(
+            image_real_blocks = _resolve_real_blocks(
                 image_block_ids,
                 block_id_relations_map,
+                block_kind="image block",
             )
             _replace_document_images(
                 self.api,
                 document_id,
                 image_real_blocks,
                 image_paths,
+            )
+
+            board_temp_ids = [block_id for block_id, _ in mermaid_targets]
+            board_real_blocks = _resolve_real_blocks(
+                board_temp_ids,
+                block_id_relations_map,
+                block_kind="board block",
+            )
+            _replace_document_mermaid_board_nodes(
+                self.api,
+                document_id,
+                board_real_blocks,
+                mermaid_targets,
             )
 
         return document_id, len(requests)
