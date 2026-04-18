@@ -136,6 +136,7 @@ version = "0.1.0"
 source = { editable = "." }
 dependencies = [
     { name = "dotenv" },
+    { name = "feishu-operator" },
     { name = "filetype" },
     { name = "imagesize" },
     { name = "lark-oapi" },
@@ -154,6 +155,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "dotenv", specifier = ">=0.9.9" },
+    { name = "feishu-operator", specifier = ">=1.7.0" },
     { name = "filetype", specifier = ">=1.2.0" },
     { name = "imagesize", specifier = ">=2.0.0" },
     { name = "lark-oapi", specifier = ">=1.5.3" },
@@ -167,6 +169,21 @@ requires-dist = [
 dev = [
     { name = "pytest", specifier = ">=8.4.2" },
     { name = "ruff", specifier = ">=0.15.8" },
+]
+
+[[package]]
+name = "feishu-operator"
+version = "1.7.0"
+source = { registry = "https://pypi.tuna.tsinghua.edu.cn/simple" }
+dependencies = [
+    { name = "click" },
+    { name = "lark-oapi" },
+    { name = "python-graylog" },
+    { name = "requests" },
+]
+sdist = { url = "https://pypi.tuna.tsinghua.edu.cn/packages/d5/0b/640e5a656bc05010cda5dc7d2d0dbc5038d1129d6bf023fa929579af8e1a/feishu_operator-1.7.0.tar.gz", hash = "sha256:eba4ee3554a11814555aea8a01b5585aa52495bc2fb4901eee31dfd94ca2190a", size = 50616, upload-time = "2026-04-11T16:16:05.16Z" }
+wheels = [
+    { url = "https://pypi.tuna.tsinghua.edu.cn/packages/b2/ec/b6cb60b70a5afe4da8577d81d53e5e5710074af200fdd56d8ba59c0325d9/feishu_operator-1.7.0-py3-none-any.whl", hash = "sha256:f168d120626d8dc71c05d75e05ca8db65ec363ab0c24b5d57363f78ee623b765", size = 63591, upload-time = "2026-04-11T16:16:03.935Z" },
 ]
 
 [[package]]
@@ -438,6 +455,15 @@ source = { registry = "https://pypi.tuna.tsinghua.edu.cn/simple" }
 sdist = { url = "https://pypi.tuna.tsinghua.edu.cn/packages/82/ed/0301aeeac3e5353ef3d94b6ec08bbcabd04a72018415dcb29e588514bba8/python_dotenv-1.2.2.tar.gz", hash = "sha256:2c371a91fbd7ba082c2c1dc1f8bf89ca22564a087c2c287cd9b662adde799cf3", size = 50135, upload-time = "2026-03-01T16:00:26.196Z" }
 wheels = [
     { url = "https://pypi.tuna.tsinghua.edu.cn/packages/0b/d7/1959b9648791274998a9c3526f6d0ec8fd2233e4d4acce81bbae76b44b2a/python_dotenv-1.2.2-py3-none-any.whl", hash = "sha256:1d8214789a24de455a8b8bd8ae6fe3c6b69a5e3d64aa8a8e5d68e694bbcb285a", size = 22101, upload-time = "2026-03-01T16:00:25.09Z" },
+]
+
+[[package]]
+name = "python-graylog"
+version = "0.3.0"
+source = { registry = "https://pypi.tuna.tsinghua.edu.cn/simple" }
+sdist = { url = "https://pypi.tuna.tsinghua.edu.cn/packages/57/65/e43ccd3da37f121725b65a49fb4baedd7486d83106ab31a3c25933a1a57e/python-graylog-0.3.0.tar.gz", hash = "sha256:142c57b3fa4b5aa676f69eda0c55c97da2e63bbbb08e2e96fe52c98d0265f72e", size = 14029, upload-time = "2024-02-06T10:05:02.749Z" }
+wheels = [
+    { url = "https://pypi.tuna.tsinghua.edu.cn/packages/54/11/0fde14d13f77535c19eae2228e5fa3244edcc85e3cc3f1d4dae34054dfa0/python_graylog-0.3.0-py3-none-any.whl", hash = "sha256:4c147474facacf4a45a4387c7021a773bdfc80e84a4ca301f6e0e4ffd39190f7", size = 15110, upload-time = "2024-02-06T10:05:00.522Z" },
 ]
 
 [[package]]
