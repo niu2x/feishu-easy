@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Any, Callable
 import lark_oapi as lark
 
 if TYPE_CHECKING:
-    from ...feishu_api import FeishuAPI
+    from .gateway import FeishuAPI
 
 
 class _FeishuAPIResponse:

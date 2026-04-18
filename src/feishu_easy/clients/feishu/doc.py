@@ -3,6 +3,7 @@ from __future__ import annotations
 import requests
 
 from .base import _BaseAPIGroup, _FeishuAPIResponse
+from .errors import FeishuAuthError, FeishuHTTPError, FeishuResponseError
 
 
 class FeishuDocAPI(_BaseAPIGroup):
@@ -24,18 +25,23 @@ class FeishuDocAPI(_BaseAPIGroup):
                 "open-apis.doc.v2.content.get connection error"
             ) from exc
         except requests.RequestException as exc:
-            raise RuntimeError(f"open-apis.doc.v2.content.get failed: {exc}") from exc
+            raise FeishuHTTPError(
+                f"open-apis.doc.v2.content.get failed: {exc}",
+                action="open-apis.doc.v2.content.get",
+            ) from exc
 
         try:
             payload = response.json()
         except ValueError as exc:
-            raise RuntimeError(
-                "open-apis.doc.v2.content.get failed: invalid json response"
+            raise FeishuHTTPError(
+                "open-apis.doc.v2.content.get failed: invalid json response",
+                action="open-apis.doc.v2.content.get",
             ) from exc
 
         if not isinstance(payload, dict):
-            raise RuntimeError(
-                "open-apis.doc.v2.content.get failed: invalid json payload"
+            raise FeishuHTTPError(
+                "open-apis.doc.v2.content.get failed: invalid json payload",
+                action="open-apis.doc.v2.content.get",
             )
 
         return _FeishuAPIResponse(payload)
@@ -43,7 +49,10 @@ class FeishuDocAPI(_BaseAPIGroup):
     def get_doc_content(self, obj_token: str) -> str:
         token = self._parent.get_access_token()
         if not isinstance(token, str) or not token:
-            raise RuntimeError("get_doc_content failed: access_token missing")
+            raise FeishuAuthError(
+                "get_doc_content failed: access_token missing",
+                action="open-apis.doc.v2.content.get",
+            )
 
         wrapped_response = self._call_with_retry(
             "open-apis.doc.v2.content.get",
@@ -51,12 +60,16 @@ class FeishuDocAPI(_BaseAPIGroup):
         )
 
         if not isinstance(wrapped_response.data, dict):
-            raise RuntimeError("open-apis.doc.v2.content.get failed: data missing")
+            raise FeishuResponseError(
+                "open-apis.doc.v2.content.get failed: data missing",
+                action="open-apis.doc.v2.content.get",
+            )
 
         content = wrapped_response.data.get("content")
         if not isinstance(content, str):
-            raise RuntimeError(
-                "open-apis.doc.v2.content.get failed: data.content missing"
+            raise FeishuResponseError(
+                "open-apis.doc.v2.content.get failed: data.content missing",
+                action="open-apis.doc.v2.content.get",
             )
 
         return content

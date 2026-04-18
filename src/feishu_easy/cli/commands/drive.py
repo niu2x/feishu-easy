@@ -7,36 +7,36 @@ import json
 
 import typer
 
-from ..services.drive_service import delete_drive_file as delete_drive_file_service
-from ..services.drive_service import (
+from ...services.drive_service import delete_drive_file as delete_drive_file_service
+from ...services.drive_service import (
     batch_query_drive_meta as batch_query_drive_meta_service,
 )
-from ..services.drive_service import copy_drive_file as copy_drive_file_service
-from ..services.drive_service import (
+from ...services.drive_service import copy_drive_file as copy_drive_file_service
+from ...services.drive_service import (
     get_drive_file_statistics as get_drive_file_statistics_service,
 )
-from ..services.drive_service import list_drive_file as list_drive_file_service
-from ..services.drive_service import (
+from ...services.drive_service import list_drive_file as list_drive_file_service
+from ...services.drive_service import (
     download_drive_media as download_drive_media_service,
 )
-from ..services.drive_service import (
+from ...services.drive_service import (
     download_drive_file as download_drive_file_service,
 )
-from ..services.drive_service import (
+from ...services.drive_service import (
     list_drive_file_view_record as list_drive_file_view_record_service,
 )
-from ..services.drive_service import (
+from ...services.drive_service import (
     list_drive_file_version as list_drive_file_version_service,
 )
-from ..services.drive_service import move_drive_file as move_drive_file_service
-from ..services.drive_service import upload_drive_file as upload_drive_file_service
-from ..services.drive_service import (
+from ...services.drive_service import move_drive_file as move_drive_file_service
+from ...services.drive_service import upload_drive_file as upload_drive_file_service
+from ...services.drive_service import (
     subscribe_drive_file as subscribe_drive_file_service,
 )
-from ..services.drive_service import (
+from ...services.drive_service import (
     delete_subscribe_drive_file as delete_subscribe_drive_file_service,
 )
-from ..services.drive_service import (
+from ...services.drive_service import (
     get_subscribe_drive_file as get_subscribe_drive_file_service,
 )
 

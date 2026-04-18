@@ -13,6 +13,7 @@ from lark_oapi.api.sheets.v3 import (
 )
 
 from .base import _BaseAPIGroup, _FeishuAPIResponse
+from .errors import FeishuAuthError, FeishuHTTPError, FeishuResponseError
 
 
 class FeishuSheetsAPI(_BaseAPIGroup):
@@ -81,8 +82,9 @@ class FeishuSheetsAPI(_BaseAPIGroup):
     ) -> dict[str, Any]:
         access_token = self._parent.get_access_token()
         if not isinstance(access_token, str) or not access_token:
-            raise RuntimeError(
-                "open-apis.sheets.v2.spreadsheets.metainfo.get failed: access_token missing"
+            raise FeishuAuthError(
+                "open-apis.sheets.v2.spreadsheets.metainfo.get failed: access_token missing",
+                action="open-apis.sheets.v2.spreadsheets.metainfo.get",
             )
 
         query_params: dict[str, str] = {}
@@ -114,20 +116,23 @@ class FeishuSheetsAPI(_BaseAPIGroup):
                     "open-apis.sheets.v2.spreadsheets.metainfo.get connection error"
                 ) from exc
             except requests.RequestException as exc:
-                raise RuntimeError(
-                    f"open-apis.sheets.v2.spreadsheets.metainfo.get failed: {exc}"
+                raise FeishuHTTPError(
+                    f"open-apis.sheets.v2.spreadsheets.metainfo.get failed: {exc}",
+                    action="open-apis.sheets.v2.spreadsheets.metainfo.get",
                 ) from exc
 
             try:
                 payload = response.json()
             except ValueError as exc:
-                raise RuntimeError(
-                    "open-apis.sheets.v2.spreadsheets.metainfo.get failed: invalid json response"
+                raise FeishuHTTPError(
+                    "open-apis.sheets.v2.spreadsheets.metainfo.get failed: invalid json response",
+                    action="open-apis.sheets.v2.spreadsheets.metainfo.get",
                 ) from exc
 
             if not isinstance(payload, dict):
-                raise RuntimeError(
-                    "open-apis.sheets.v2.spreadsheets.metainfo.get failed: invalid json payload"
+                raise FeishuHTTPError(
+                    "open-apis.sheets.v2.spreadsheets.metainfo.get failed: invalid json payload",
+                    action="open-apis.sheets.v2.spreadsheets.metainfo.get",
                 )
 
             return _FeishuAPIResponse(payload)
@@ -137,8 +142,9 @@ class FeishuSheetsAPI(_BaseAPIGroup):
             _call,
         )
         if not isinstance(wrapped_response.data, dict):
-            raise RuntimeError(
-                "open-apis.sheets.v2.spreadsheets.metainfo.get failed: data missing"
+            raise FeishuResponseError(
+                "open-apis.sheets.v2.spreadsheets.metainfo.get failed: data missing",
+                action="open-apis.sheets.v2.spreadsheets.metainfo.get",
             )
 
         return wrapped_response.data
@@ -174,8 +180,9 @@ class FeishuSheetsAPI(_BaseAPIGroup):
     ) -> dict[str, Any]:
         access_token = self._parent.get_access_token()
         if not isinstance(access_token, str) or not access_token:
-            raise RuntimeError(
-                "open-apis.sheets.v2.spreadsheets.values.get failed: access_token missing"
+            raise FeishuAuthError(
+                "open-apis.sheets.v2.spreadsheets.values.get failed: access_token missing",
+                action="open-apis.sheets.v2.spreadsheets.values.get",
             )
 
         query_params: dict[str, str] = {}
@@ -207,20 +214,23 @@ class FeishuSheetsAPI(_BaseAPIGroup):
                     "open-apis.sheets.v2.spreadsheets.values.get connection error"
                 ) from exc
             except requests.RequestException as exc:
-                raise RuntimeError(
-                    f"open-apis.sheets.v2.spreadsheets.values.get failed: {exc}"
+                raise FeishuHTTPError(
+                    f"open-apis.sheets.v2.spreadsheets.values.get failed: {exc}",
+                    action="open-apis.sheets.v2.spreadsheets.values.get",
                 ) from exc
 
             try:
                 payload = response.json()
             except ValueError as exc:
-                raise RuntimeError(
-                    "open-apis.sheets.v2.spreadsheets.values.get failed: invalid json response"
+                raise FeishuHTTPError(
+                    "open-apis.sheets.v2.spreadsheets.values.get failed: invalid json response",
+                    action="open-apis.sheets.v2.spreadsheets.values.get",
                 ) from exc
 
             if not isinstance(payload, dict):
-                raise RuntimeError(
-                    "open-apis.sheets.v2.spreadsheets.values.get failed: invalid json payload"
+                raise FeishuHTTPError(
+                    "open-apis.sheets.v2.spreadsheets.values.get failed: invalid json payload",
+                    action="open-apis.sheets.v2.spreadsheets.values.get",
                 )
 
             return _FeishuAPIResponse(payload)
@@ -230,8 +240,9 @@ class FeishuSheetsAPI(_BaseAPIGroup):
             _call,
         )
         if not isinstance(wrapped_response.data, dict):
-            raise RuntimeError(
-                "open-apis.sheets.v2.spreadsheets.values.get failed: data missing"
+            raise FeishuResponseError(
+                "open-apis.sheets.v2.spreadsheets.values.get failed: data missing",
+                action="open-apis.sheets.v2.spreadsheets.values.get",
             )
 
         return wrapped_response.data

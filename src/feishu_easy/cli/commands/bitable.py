@@ -5,7 +5,7 @@ from typing import Annotated
 
 import typer
 
-from ..services.bitable_service import (
+from ...services.bitable_service import (
     get_app_table_view as get_app_table_view_service,
     get_app as get_app_service,
     list_app_table_field as list_app_table_field_service,

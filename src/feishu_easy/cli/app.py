@@ -6,14 +6,14 @@ from typing import Literal
 
 import typer
 
-from ..cmds.board import app as board_app
-from ..cmds.bitable import app as bitable_app
-from ..cmds.doc import app as doc_app
-from ..cmds.docx import app as docx_app
-from ..cmds.drive import app as drive_app
-from ..cmds.flow import app as flow_app
-from ..cmds.sheets import app as sheets_app
-from ..cmds.wiki import app as wiki_app
+from .commands.board import app as board_app
+from .commands.bitable import app as bitable_app
+from .commands.doc import app as doc_app
+from .commands.docx import app as docx_app
+from .commands.drive import app as drive_app
+from .commands.flow import app as flow_app
+from .commands.sheets import app as sheets_app
+from .commands.wiki import app as wiki_app
 from ..services.auth_service import (
     get_tenant_access_token as get_tenant_access_token_service,
 )
@@ -78,25 +78,18 @@ def convert(
             param_hint="stdin",
         )
 
-    try:
-        converted = convert_from_feishu_service(
-            raw_content,
-            source_type=from_type,
-            target_type=to_type,
-            mode=mode,
-        )
-    except ValueError as exc:
-        raise typer.BadParameter(str(exc)) from exc
+    converted = convert_from_feishu_service(
+        raw_content,
+        source_type=from_type,
+        target_type=to_type,
+        mode=mode,
+    )
 
     if isinstance(converted, str):
         typer.echo(converted)
         return
 
     typer.echo(dumps(converted, indent=2, ensure_ascii=False))
-
-
-def main() -> None:
-    app()
 
 
 app.add_typer(wiki_app, name="wiki")

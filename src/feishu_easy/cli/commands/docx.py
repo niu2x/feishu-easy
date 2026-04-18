@@ -6,21 +6,21 @@ import json
 
 import typer
 
-from ..services.document_service import create_document as create_document_service
-from ..services.document_service import (
+from ...services.document_service import create_document as create_document_service
+from ...services.document_service import (
     batch_delete_document_block_children as batch_delete_document_block_children_service,
 )
-from ..services.document_service import (
+from ...services.document_service import (
     get_document_block as get_document_block_service,
 )
-from ..services.document_service import (
+from ...services.document_service import (
     get_document_block_children as get_document_block_children_service,
 )
-from ..services.document_service import get_document as get_document_service
-from ..services.document_service import (
+from ...services.document_service import get_document as get_document_service
+from ...services.document_service import (
     list_document_block as list_document_block_service,
 )
-from ..services.document_service import raw_content as raw_content_service
+from ...services.document_service import raw_content as raw_content_service
 
 app = typer.Typer(no_args_is_help=True)
 

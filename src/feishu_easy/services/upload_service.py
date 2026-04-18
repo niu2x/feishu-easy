@@ -14,6 +14,7 @@ from mistletoe import Document
 from mistletoe.utils import traverse
 
 from ..feishu_api import FeishuAPI
+from .errors import ServiceError, ServiceValidationError
 
 IMAGE_BLOCK_TYPE = 27
 TABLE_BLOCK_TYPE = 31
@@ -63,7 +64,7 @@ def _split_descendant_request(
 
     children_ids = request_body["children_id"]
     if len(children_ids) <= 1:
-        raise RuntimeError("cannot split request with a single root block")
+        raise ServiceValidationError("cannot split request with a single root block")
 
     half = len(children_ids) // 2
     left_ids = children_ids[:half]
@@ -98,7 +99,7 @@ def _download_remote_image(
     except (urllib.error.URLError, TimeoutError) as exc:
         if skip_failed:
             return None
-        raise ValueError(f"failed to download image: {image_src}") from exc
+        raise ServiceValidationError(f"failed to download image: {image_src}") from exc
 
     kind = filetype.guess(image_content)
     if kind is not None:
@@ -170,7 +171,7 @@ def _collect_image_block_ids(request_body: dict[str, Any]) -> list[str]:
 def _resolve_document_id(api: FeishuAPI, node_token: str) -> str:
     node = api.wiki.get_node(node_token)
     if node["obj_type"] != "docx":
-        raise RuntimeError("Only support docx")
+        raise ServiceValidationError("Only support docx")
     return node["obj_token"]
 
 
@@ -227,7 +228,7 @@ def _resolve_real_image_blocks(
     for temporary_block_id in image_block_ids:
         real_block_id = block_id_relations_map.get(temporary_block_id)
         if real_block_id is None:
-            raise RuntimeError(
+            raise ServiceError(
                 f"Missing block relation for image block: {temporary_block_id}"
             )
         real_block_ids.append(real_block_id)
@@ -242,7 +243,7 @@ def _replace_document_images(
 ) -> None:
     for image_index, image_path in indexed_image_paths:
         if image_index >= len(image_real_blocks):
-            raise RuntimeError(f"Image index {image_index} out of range")
+            raise ServiceError(f"Image index {image_index} out of range")
         block_id = image_real_blocks[image_index]
 
         upload_result = api.drive.upload_media(
@@ -254,7 +255,7 @@ def _replace_document_images(
 
         width, height = imagesize.get(str(image_path))
         if width <= 0 or height <= 0:
-            raise RuntimeError(f"Failed to detect image size: {image_path}")
+            raise ServiceError(f"Failed to detect image size: {image_path}")
 
         api.docx.patch_document_block(
             document_id=document_id,
@@ -323,9 +324,13 @@ class MarkdownUploadFlow:
 
 
 def upload_markdown(
-    markdown_file: Path, node_token: str, skip_failed_images: bool = False
+    markdown_file: Path,
+    node_token: str,
+    skip_failed_images: bool = False,
+    *,
+    api: FeishuAPI | None = None,
 ) -> tuple[str, int]:
-    flow = MarkdownUploadFlow()
+    flow = MarkdownUploadFlow(api=api)
     return flow.upload(
         markdown_file=markdown_file,
         node_token=node_token,

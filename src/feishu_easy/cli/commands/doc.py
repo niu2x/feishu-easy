@@ -4,7 +4,7 @@ from typing import Annotated
 
 import typer
 
-from ..services.doc_service import get_doc_content as get_doc_content_service
+from ...services.doc_service import get_doc_content as get_doc_content_service
 
 app = typer.Typer(no_args_is_help=True)
 

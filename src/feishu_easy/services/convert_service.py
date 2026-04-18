@@ -7,6 +7,7 @@ from ..unified_doc import (
     UnifiedDocument,
     unified_to_markdown,
 )
+from .errors import ServiceError, ServiceValidationError
 
 from ..convert.from_feishu import (
     bitable_to_unified,
@@ -31,30 +32,32 @@ def convert_from_feishu(
     try:
         payload = json.loads(raw_content)
     except json.JSONDecodeError as exc:
-        raise ValueError(f"Input is not valid JSON: {exc.msg}") from exc
+        raise ServiceValidationError(f"Input is not valid JSON: {exc.msg}") from exc
 
     if not isinstance(payload, dict):
-        raise ValueError("Input JSON must be an object")
+        raise ServiceValidationError("Input JSON must be an object")
 
     normalized = normalize_payload(payload, source_type=source_type)
     if source_type == "doc":
         result = doc_to_unified(normalized, mode)
     elif source_type == "docx":
         if not normalized["obj"]:
-            raise ValueError("docx blocks are empty, cannot convert to unified")
+            raise ServiceValidationError(
+                "docx blocks are empty, cannot convert to unified"
+            )
         result = docx_to_unified(normalized, mode)
     elif source_type == "sheet":
         result = sheet_to_unified(normalized)
     elif source_type == "bitable":
         result = bitable_to_unified(normalized)
     else:
-        raise ValueError(f"Unsupported source type: {source_type}")
+        raise ServiceValidationError(f"Unsupported source type: {source_type}")
 
     if target_type == "unified":
         return result.model_dump()
     if target_type == "markdown":
         return unified_to_markdown(result)
-    raise ValueError(f"Unsupported target type: {target_type}")
+    raise ServiceValidationError(f"Unsupported target type: {target_type}")
 
 
 def get_online_unified_document_by_node_token(
@@ -67,7 +70,7 @@ def get_online_unified_document_by_node_token(
     source = get_online_wiki_node_source_by_node_token(node_token, api=feishu_api)
     unified_payload = convert_online_wiki_node_source(source, target_type="unified")
     if not isinstance(unified_payload, dict):
-        raise RuntimeError("Unexpected conversion result for unified document")
+        raise ServiceError("Unexpected conversion result for unified document")
     return UnifiedDocument.model_validate(unified_payload)
 
 
@@ -81,11 +84,13 @@ def get_online_wiki_node_source_by_node_token(
 
     obj_type = node.get("obj_type")
     if obj_type not in {"doc", "docx", "sheet", "bitable"}:
-        raise ValueError("Only doc/docx/sheet/bitable wiki node is supported")
+        raise ServiceValidationError(
+            "Only doc/docx/sheet/bitable wiki node is supported"
+        )
 
     obj_token = node.get("obj_token")
     if not isinstance(obj_token, str) or not obj_token:
-        raise ValueError("Invalid node: obj_token is missing")
+        raise ServiceValidationError("Invalid node: obj_token is missing")
 
     if obj_type == "docx":
         raw_payload = feishu_api.docx.list_document_block(
@@ -151,7 +156,7 @@ def get_online_wiki_node_source_by_node_token(
             )
 
         if not bitable_items:
-            raise RuntimeError("list_app_table failed: no table resource found")
+            raise ServiceError("list_app_table failed: no table resource found")
 
         return {
             "payload": json.dumps(
@@ -179,7 +184,7 @@ def get_online_sheet_asset_source_by_token(
         target_sheet_id=sheet_token,
     )
     if not sheets:
-        raise RuntimeError("query_spreadsheet_sheet failed: sheet resource not found")
+        raise ServiceError("query_spreadsheet_sheet failed: sheet resource not found")
 
     return _build_online_sheet_source(
         sheets=sheets, node_title=str(sheets[0].get("title") or "")
@@ -193,7 +198,7 @@ def resolve_sheet_asset_tokens(token: str) -> tuple[str, str]:
         if len(parts) == 2 and parts[0] and parts[1]:
             return parts[0], parts[1]
 
-    raise ValueError(
+    raise ServiceValidationError(
         "Invalid sheet token, expected token=<spreadsheet_token>_<sheet_token>"
     )
 
@@ -296,7 +301,7 @@ def _list_bitable_table_resources(
     payload = api.bitable.list_app_table(app_token=app_token)
     tables = payload.get("items")
     if not isinstance(tables, list):
-        raise RuntimeError("list_app_table failed: missing items")
+        raise ServiceError("list_app_table failed: missing items")
     return [table for table in tables]
 
 
@@ -322,21 +327,21 @@ def normalize_payload(
         return _normalize_sheet_payload(payload)
     if source_type == "bitable":
         return _normalize_bitable_payload(payload)
-    raise ValueError(f"Unsupported source type: {source_type}")
+    raise ServiceValidationError(f"Unsupported source type: {source_type}")
 
 
 def _normalize_doc_payload(payload: dict[str, Any]) -> dict[str, Any]:
     if isinstance(payload.get("node"), dict) and payload.get("obj") is not None:
         return payload
 
-    raise ValueError("Unsupported doc payload")
+    raise ServiceValidationError("Unsupported doc payload")
 
 
 def _normalize_docx_payload(payload: dict[str, Any]) -> dict[str, Any]:
     if isinstance(payload.get("node"), dict) and isinstance(payload.get("obj"), list):
         return payload
 
-    raise ValueError("Unsupported docx payload")
+    raise ServiceValidationError("Unsupported docx payload")
 
 
 def _normalize_sheet_payload(payload: dict[str, Any]) -> dict[str, Any]:
@@ -345,7 +350,7 @@ def _normalize_sheet_payload(payload: dict[str, Any]) -> dict[str, Any]:
     if isinstance(node, dict) and isinstance(obj, list):
         return payload
 
-    raise ValueError(
+    raise ServiceValidationError(
         "Unsupported sheet payload: expected {'node': {...}, 'obj': [...]} "
     )
 
@@ -354,7 +359,7 @@ def _normalize_bitable_payload(payload: dict[str, Any]) -> dict[str, Any]:
     node = payload.get("node")
     obj = payload.get("obj")
     if not isinstance(node, dict) or not isinstance(obj, list):
-        raise ValueError("Unsupported bitable payload")
+        raise ServiceValidationError("Unsupported bitable payload")
 
     normalized_items: list[dict[str, Any]] = []
     for item in obj:
@@ -384,7 +389,7 @@ def _normalize_bitable_payload(payload: dict[str, Any]) -> dict[str, Any]:
         )
 
     if not normalized_items:
-        raise ValueError("Unsupported bitable payload")
+        raise ServiceValidationError("Unsupported bitable payload")
 
     return {
         "node": node,
