@@ -12,19 +12,18 @@ from ..feishu_api import FeishuAPI
 def bootstrap_auth(run_as_user: bool) -> None:
     load_dotenv()
 
-    app_id = os.getenv("FEISHU_APP_ID")
-    app_secret = os.getenv("FEISHU_APP_SECRET")
-
     if run_as_user:
 
         user_access_token = _auth.ensure_scopes(
             ["docx:document.block:convert"], open_browser=True, token=None
         )
         FeishuAPI.configure_defaults(
-            app_id=app_id,
             user_access_token=user_access_token,
         )
         return
+
+    app_id = os.getenv("FEISHU_APP_ID")
+    app_secret = os.getenv("FEISHU_APP_SECRET")
 
     if not app_id:
         raise typer.BadParameter(
