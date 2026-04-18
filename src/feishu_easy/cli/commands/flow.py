@@ -65,12 +65,20 @@ def get_markdown(
             help="Expand docx sheet blocks into tables",
         ),
     ] = False,
+    expand_bitable: Annotated[
+        bool,
+        typer.Option(
+            "--expand-bitable/--no-expand-bitable",
+            help="Expand docx bitable blocks into tables",
+        ),
+    ] = False,
 ) -> None:
     typer.echo(
         get_online_markdown_raw_by_node_token_service(
             node_token=node_token,
             expand_board=expand_board,
             expand_sheets=expand_sheets,
+            expand_bitable=expand_bitable,
         )
     )
 
@@ -94,10 +102,18 @@ def get_unified(
             help="Expand docx sheet blocks into tables",
         ),
     ] = False,
+    expand_bitable: Annotated[
+        bool,
+        typer.Option(
+            "--expand-bitable/--no-expand-bitable",
+            help="Expand docx bitable blocks into tables",
+        ),
+    ] = False,
 ) -> None:
     unified_document = get_online_unified_document_by_node_token_service(
         node_token=node_token,
         expand_board=expand_board,
         expand_sheets=expand_sheets,
+        expand_bitable=expand_bitable,
     )
     typer.echo(json.dumps(unified_document.model_dump(), indent=2, ensure_ascii=False))
