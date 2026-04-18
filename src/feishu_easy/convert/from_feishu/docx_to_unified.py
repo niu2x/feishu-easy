@@ -30,6 +30,8 @@ def docx_to_unified(
     *,
     expand_board: bool = False,
     board_node_fetcher: Callable[[str], dict[str, Any]] | None = None,
+    expand_sheets: bool = False,
+    sheet_block_fetcher: Callable[[str], list[Block]] | None = None,
 ) -> UnifiedDocument:
     blocks_dict = build_blocks_dict(raw["obj"])
     unified_blocks = [
@@ -39,6 +41,8 @@ def docx_to_unified(
             mode,
             expand_board=expand_board,
             board_node_fetcher=board_node_fetcher,
+            expand_sheets=expand_sheets,
+            sheet_block_fetcher=sheet_block_fetcher,
         )
     ]
     image_urls, link_urls = extract_mark_urls_from_blocks(unified_blocks)
@@ -80,6 +84,8 @@ def convert_single_block(
     *,
     expand_board: bool = False,
     board_node_fetcher: Callable[[str], dict[str, Any]] | None = None,
+    expand_sheets: bool = False,
+    sheet_block_fetcher: Callable[[str], list[Block]] | None = None,
 ) -> Block:
     block = blocks_dict[block_id]
     block_type = block["block_type"]
@@ -97,6 +103,8 @@ def convert_single_block(
             mode,
             expand_board=expand_board,
             board_node_fetcher=board_node_fetcher,
+            expand_sheets=expand_sheets,
+            sheet_block_fetcher=sheet_block_fetcher,
         )
 
     if block_name == "页面":
@@ -456,6 +464,15 @@ def convert_single_block(
         )
 
     if block_name == "电子表格":
+        if expand_sheets and sheet_block_fetcher is not None:
+            sheet_token = block["sheet"]["token"]
+            sheet_blocks = sheet_block_fetcher(sheet_token)
+            return Block(
+                type=BlockType.Passthrough,
+                inlines=[],
+                children=[*sheet_blocks, *children],
+            )
+
         url = build_feishu_resource_url(
             _asset_path(mode, "sheet"),
             {
@@ -559,6 +576,8 @@ def convert_blocks(
     *,
     expand_board: bool = False,
     board_node_fetcher: Callable[[str], dict[str, Any]] | None = None,
+    expand_sheets: bool = False,
+    sheet_block_fetcher: Callable[[str], list[Block]] | None = None,
 ) -> list[Block]:
     return [
         convert_single_block(
@@ -567,6 +586,8 @@ def convert_blocks(
             mode,
             expand_board=expand_board,
             board_node_fetcher=board_node_fetcher,
+            expand_sheets=expand_sheets,
+            sheet_block_fetcher=sheet_block_fetcher,
         )
         for block_id in ids_list
     ]

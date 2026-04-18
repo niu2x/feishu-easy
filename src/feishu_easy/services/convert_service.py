@@ -5,6 +5,7 @@ from collections.abc import Callable
 from typing import Any, Literal
 
 from ..unified_doc import (
+    Block,
     UnifiedDocument,
     unified_to_markdown,
 )
@@ -31,6 +32,8 @@ def convert_from_feishu(
     mode: Mode,
     expand_board: bool = False,
     board_node_fetcher: Callable[[str], dict[str, Any]] | None = None,
+    expand_sheets: bool = False,
+    sheet_block_fetcher: Callable[[str], list[Block]] | None = None,
 ) -> dict[str, Any] | str:
     try:
         payload = json.loads(raw_content)
@@ -53,6 +56,8 @@ def convert_from_feishu(
             mode,
             expand_board=expand_board,
             board_node_fetcher=board_node_fetcher,
+            expand_sheets=expand_sheets,
+            sheet_block_fetcher=sheet_block_fetcher,
         )
     elif source_type == "sheet":
         result = sheet_to_unified(normalized)
@@ -73,6 +78,7 @@ def get_online_unified_document_by_node_token(
     *,
     api: FeishuAPI | None = None,
     expand_board: bool = False,
+    expand_sheets: bool = False,
 ) -> UnifiedDocument:
     feishu_api = api or FeishuAPI()
 
@@ -83,6 +89,10 @@ def get_online_unified_document_by_node_token(
         expand_board=expand_board,
         board_node_fetcher=(
             feishu_api.board.list_whiteboard_node if expand_board else None
+        ),
+        expand_sheets=expand_sheets,
+        sheet_block_fetcher=(
+            _build_online_sheet_block_fetcher(api=feishu_api) if expand_sheets else None
         ),
     )
     if not isinstance(unified_payload, dict):
@@ -95,6 +105,7 @@ def get_online_markdown_raw_by_node_token(
     *,
     api: FeishuAPI | None = None,
     expand_board: bool = False,
+    expand_sheets: bool = False,
 ) -> str:
     feishu_api = api or FeishuAPI()
 
@@ -105,6 +116,10 @@ def get_online_markdown_raw_by_node_token(
         expand_board=expand_board,
         board_node_fetcher=(
             feishu_api.board.list_whiteboard_node if expand_board else None
+        ),
+        expand_sheets=expand_sheets,
+        sheet_block_fetcher=(
+            _build_online_sheet_block_fetcher(api=feishu_api) if expand_sheets else None
         ),
     )
     if not isinstance(markdown, str):
@@ -343,12 +358,31 @@ def _list_bitable_table_resources(
     return [table for table in tables]
 
 
+def _build_online_sheet_block_fetcher(
+    *,
+    api: FeishuAPI,
+) -> Callable[[str], list[Block]]:
+    def fetch_sheet_blocks(token: str) -> list[Block]:
+        source = get_online_sheet_asset_source_by_token(token, api=api)
+        unified_payload = convert_online_wiki_node_source(
+            source,
+            target_type="unified",
+        )
+        if not isinstance(unified_payload, dict):
+            raise ServiceError("Unexpected conversion result for sheet asset")
+        return UnifiedDocument.model_validate(unified_payload).blocks
+
+    return fetch_sheet_blocks
+
+
 def convert_online_wiki_node_source(
     source: dict[str, str],
     *,
     target_type: TargetType,
     expand_board: bool = False,
     board_node_fetcher: Callable[[str], dict[str, Any]] | None = None,
+    expand_sheets: bool = False,
+    sheet_block_fetcher: Callable[[str], list[Block]] | None = None,
 ) -> dict[str, Any] | str:
     return convert_from_feishu(
         source["payload"],
@@ -357,6 +391,8 @@ def convert_online_wiki_node_source(
         mode="online",
         expand_board=expand_board,
         board_node_fetcher=board_node_fetcher,
+        expand_sheets=expand_sheets,
+        sheet_block_fetcher=sheet_block_fetcher,
     )
 
 

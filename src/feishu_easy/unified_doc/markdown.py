@@ -14,11 +14,18 @@ def unified_to_markdown(document: UnifiedDocument) -> str:
 
 def _render_document_to_markdown(document: UnifiedDocument) -> str:
     lines: list[str] = []
+    prev_block: Block | None = None
 
     for block in document.blocks:
+        if prev_block is not None and _needs_blank_line_between(prev_block, block):
+            if not lines or lines[-1] != "":
+                lines.append("")
+            lines.append("")
+
         rendered = _block_to_markdown(block)
         if rendered:
             lines.extend(rendered)
+            prev_block = block
 
     return "\n".join(lines).strip()
 
@@ -116,13 +123,24 @@ def _block_to_markdown(block: Block, list_depth: int = 0) -> list[str]:
 
 def _render_children(children: list[Block], list_depth: int) -> list[str]:
     lines: list[str] = []
+    prev_child: Block | None = None
     for child in children:
+        if prev_child is not None and _needs_blank_line_between(prev_child, child):
+            if not lines or lines[-1] != "":
+                lines.append("")
+            lines.append("")
+
         child_lines = _block_to_markdown(child, list_depth)
         if child_lines:
             if lines and lines[-1] != "":
                 lines.append("")
             lines.extend(child_lines)
+            prev_child = child
     return lines
+
+
+def _needs_blank_line_between(prev_block: Block, next_block: Block) -> bool:
+    return prev_block.type == BlockType.Table and next_block.type == BlockType.Table
 
 
 def _to_blockquote_lines(lines: list[str], indent: str) -> list[str]:

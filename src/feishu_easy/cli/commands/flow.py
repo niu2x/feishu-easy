@@ -60,11 +60,19 @@ def get_markdown(
             help="Expand docx board blocks (currently supports mind map)",
         ),
     ] = False,
+    expand_sheets: Annotated[
+        bool,
+        typer.Option(
+            "--expand-sheets/--no-expand-sheets",
+            help="Expand docx sheet blocks into tables",
+        ),
+    ] = False,
 ) -> None:
     typer.echo(
         get_online_markdown_raw_by_node_token_service(
             node_token=node_token,
             expand_board=expand_board,
+            expand_sheets=expand_sheets,
         )
     )
 
@@ -82,9 +90,17 @@ def get_unified(
             help="Expand docx board blocks (currently supports mind map)",
         ),
     ] = False,
+    expand_sheets: Annotated[
+        bool,
+        typer.Option(
+            "--expand-sheets/--no-expand-sheets",
+            help="Expand docx sheet blocks into tables",
+        ),
+    ] = False,
 ) -> None:
     unified_document = get_online_unified_document_by_node_token_service(
         node_token=node_token,
         expand_board=expand_board,
+        expand_sheets=expand_sheets,
     )
     typer.echo(json.dumps(unified_document.model_dump(), indent=2, ensure_ascii=False))
