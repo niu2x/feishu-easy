@@ -103,7 +103,7 @@ def bitable_page_to_blocks(raw: dict[str, Any]) -> list[Block]:
     return page_blocks
 
 def _empty_table_cell() -> Block:
-    return Block(type=BlockType.Passthrough, inlines=[], children=[])
+    return Block(type=BlockType.Paragraph, inlines=[InlineText(text="", marks=[])])
 
 def _build_field_definitions(raw_fields: list[Any]) -> list[dict[str, Any]]:
     field_defs: list[dict[str, Any]] = []

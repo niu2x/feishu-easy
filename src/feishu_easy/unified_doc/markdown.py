@@ -401,7 +401,7 @@ def _normalize_table_cell_text(text: str) -> str:
     return text.replace("|", "\\|").strip().replace("\n", "<br>")
 
 def _make_table_row(cells: list[str]) -> str:
-    return f"| {'|'.join(cells)}|"
+    return f"| {' | '.join(cells)} |"
 
 def _to_positive_int(value: object) -> int | None:
     if isinstance(value, int) and value > 0:
