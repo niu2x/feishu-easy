@@ -5,6 +5,9 @@ from typing import Annotated
 
 import typer
 
+from ...services.convert_service import (
+    get_online_markdown_raw_by_node_token as get_online_markdown_raw_by_node_token_service,
+)
 from ...services.upload_service import upload_markdown as upload_markdown_service
 
 app = typer.Typer(no_args_is_help=True)
@@ -37,3 +40,12 @@ def upload_markdown(
         f"Uploaded markdown into document {document_id} in {batch_count} batch(es)",
         err=True,
     )
+
+@app.command("get-markdown")
+def get_markdown(
+    node_token: Annotated[
+        str,
+        typer.Argument(help="Feishu wiki node_token"),
+    ],
+) -> None:
+    typer.echo(get_online_markdown_raw_by_node_token_service(node_token=node_token))

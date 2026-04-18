@@ -71,6 +71,19 @@ def get_online_unified_document_by_node_token(
         raise ServiceError("Unexpected conversion result for unified document")
     return UnifiedDocument.model_validate(unified_payload)
 
+def get_online_markdown_raw_by_node_token(
+    node_token: str,
+    *,
+    api: FeishuAPI | None = None,
+) -> str:
+    feishu_api = api or FeishuAPI()
+
+    source = get_online_wiki_node_source_by_node_token(node_token, api=feishu_api)
+    markdown = convert_online_wiki_node_source(source, target_type="markdown")
+    if not isinstance(markdown, str):
+        raise ServiceError("Unexpected conversion result for markdown")
+    return markdown
+
 def get_online_wiki_node_source_by_node_token(
     node_token: str,
     *,
