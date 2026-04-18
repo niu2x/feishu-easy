@@ -45,6 +45,8 @@ def docx_to_unified(raw: dict[str, Any], mode: Mode) -> UnifiedDocument:
     )
 
 
+
+
 def _asset_path(mode: Mode, asset: str) -> str:
     if mode not in ("online", "offline"):
         raise ValueError(f"Unsupported mode: {mode}")
@@ -479,7 +481,7 @@ def convert_single_block(
 
     if block_name == "画板":
         url = build_feishu_resource_url(
-            _asset_path(mode, "whiteboard_thumb"),
+            _asset_path(mode, "board"),
             {
                 "token": block["board"]["token"],
                 "master_obj_type": "docx",
@@ -490,7 +492,7 @@ def convert_single_block(
             inlines=[
                 InlineText(
                     text="飞书/画板",
-                    marks=[Mark(type=MarkType.Image, attrs={"url": url})],
+                    marks=[Mark(type=MarkType.Link, attrs={"url": url})],
                 )
             ],
             children=children,
