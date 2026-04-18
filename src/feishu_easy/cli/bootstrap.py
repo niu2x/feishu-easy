@@ -17,7 +17,7 @@ def bootstrap_auth(run_as_user: bool) -> None:
         from feishu_operator import auth as _auth
 
         user_access_token = _auth.ensure_scopes(
-            ["docx:document.block:convert"], open_browser=True, token=None
+            ["docx:document.block:convert", "board:whiteboard:node:create"], open_browser=True, token=None
         )
         FeishuAPI.configure_defaults(
             user_access_token=user_access_token,
