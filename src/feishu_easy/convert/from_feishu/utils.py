@@ -48,7 +48,17 @@ def convert_whiteboard_to_mermaid_code_block(data: dict[str, Any]) -> Block:
     }
 
     has_flowchart_nodes = bool(
-        node_types.intersection({"composite_shape", "connector", "text_shape"})
+        node_types.intersection(
+            {
+                "composite_shape",
+                "connector",
+                "text_shape",
+                "table",
+                "table_uml",
+                "table_er",
+                "life_line",
+            }
+        )
     )
     has_mind_map_nodes = "mind_map" in node_types
 
@@ -64,7 +74,16 @@ def convert_whiteboard_to_mermaid_code_block(data: dict[str, Any]) -> Block:
     return _empty_mermaid_code_block()
 
 def _convert_whiteboard_flowchart(raw_nodes: list[Any]) -> Block:
-    supported_types = {"composite_shape", "connector", "text_shape", "image"}
+    supported_types = {
+        "composite_shape",
+        "connector",
+        "text_shape",
+        "image",
+        "table",
+        "table_uml",
+        "table_er",
+        "life_line",
+    }
     unsupported_types = {
         str(node_type)
         for item in raw_nodes
@@ -109,6 +128,31 @@ def _convert_whiteboard_flowchart(raw_nodes: list[Any]) -> Block:
             return str(text.get("text", ""))
         if isinstance(text, str):
             return text
+        return ""
+
+    def parse_node_label(node: dict[str, Any]) -> str:
+        text = parse_text(node).strip()
+        if text:
+            return text
+
+        node_type = node.get("type")
+        if node_type in {"table", "table_uml", "table_er"}:
+            table = node.get("table")
+            if isinstance(table, dict):
+                title = table.get("title")
+                if isinstance(title, str) and title.strip():
+                    return title
+
+        if node_type == "life_line":
+            lifeline = node.get("lifeline")
+            if isinstance(lifeline, dict):
+                lifeline_type = lifeline.get("type")
+                if isinstance(lifeline_type, str) and lifeline_type.strip():
+                    return lifeline_type
+
+        raw_id = node.get("id")
+        if isinstance(raw_id, str):
+            return raw_id
         return ""
 
     def esc(text: str) -> str:
@@ -156,18 +200,38 @@ def _convert_whiteboard_flowchart(raw_nodes: list[Any]) -> Block:
             continue
 
         alias = alias_of(raw_id)
-        label = esc(parse_text(raw_node))
+        label = esc(parse_node_label(raw_node))
         shape_type = raw_node.get("composite_shape", {}).get("type")
 
         if shape_type == "diamond":
             node_decl[raw_id] = f"{alias}{{{label}}}"
         elif shape_type == "round_rect2":
             node_decl[raw_id] = f"{alias}([{label}])"
+        elif shape_type in {"state_start", "state_end"}:
+            node_decl[raw_id] = f"{alias}(({label}))"
+        elif shape_type in {"rect", "pie"}:
+            node_decl[raw_id] = f'{alias}["{label}"]'
         else:
             if shape_type not in (None, "round_rect"):
                 unknown_composite_shape_types.add(str(shape_type))
             node_decl[raw_id] = f'{alias}["{label}"]'
 
+        node_y[raw_id] = y_center(raw_node)
+        node_center[raw_id] = (x_center(raw_node), y_center(raw_node))
+
+    for raw_node in raw_nodes:
+        if not isinstance(raw_node, dict):
+            continue
+        raw_id = raw_node.get("id")
+        if not isinstance(raw_id, str):
+            continue
+        node_type = raw_node.get("type")
+        if node_type not in {"table", "table_uml", "table_er", "life_line"}:
+            continue
+
+        alias = alias_of(raw_id)
+        label = esc(parse_node_label(raw_node))
+        node_decl[raw_id] = f'{alias}["{label}"]'
         node_y[raw_id] = y_center(raw_node)
         node_center[raw_id] = (x_center(raw_node), y_center(raw_node))
 
