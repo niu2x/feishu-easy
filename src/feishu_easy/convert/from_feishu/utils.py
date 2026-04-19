@@ -8,6 +8,11 @@ from ...unified_doc import Block, BlockType, InlineText
 
 logger = logging.getLogger(__name__)
 
+def number(value: Any, default: float = 0.0) -> float:
+    if isinstance(value, int | float):
+        return float(value)
+    return default
+
 def extract_dict(data: Any, path: str) -> Any:
     current: Any = data
     for part in path.split("/"):
@@ -74,6 +79,10 @@ def convert_whiteboard_to_mermaid_code_block(data: dict[str, Any]) -> Block:
     return _empty_mermaid_code_block()
 
 def _convert_whiteboard_flowchart(raw_nodes: list[Any]) -> Block:
+    pie_chart_block = _convert_whiteboard_pie_chart(raw_nodes)
+    if pie_chart_block is not None:
+        return pie_chart_block
+
     supported_types = {
         "composite_shape",
         "connector",
@@ -410,6 +419,164 @@ def _convert_whiteboard_flowchart(raw_nodes: list[Any]) -> Block:
         return mermaid_blocks[0]
 
     return Block(type=BlockType.Passthrough, children=mermaid_blocks)
+
+def _convert_whiteboard_pie_chart(raw_nodes: list[Any]) -> Block | None:
+    pie_groups: dict[tuple[float, float, float, float], list[dict[str, Any]]] = {}
+    rect_nodes: list[dict[str, Any]] = []
+    text_nodes: list[dict[str, Any]] = []
+
+    for raw_node in raw_nodes:
+        if not isinstance(raw_node, dict):
+            continue
+        node_type = raw_node.get("type")
+
+        if node_type == "text_shape":
+            text_nodes.append(raw_node)
+            continue
+
+        if node_type != "composite_shape":
+            continue
+
+        composite_shape = raw_node.get("composite_shape")
+        if not isinstance(composite_shape, dict):
+            continue
+
+        shape_type = composite_shape.get("type")
+        if shape_type == "rect":
+            rect_nodes.append(raw_node)
+            continue
+
+        if shape_type != "pie":
+            continue
+
+        pie = composite_shape.get("pie")
+        if not isinstance(pie, dict):
+            continue
+
+        central_angle = pie.get("central_angle")
+        if not isinstance(central_angle, int | float) or central_angle <= 0:
+            continue
+
+        key = (
+            round(number(raw_node.get("x")), 3),
+            round(number(raw_node.get("y")), 3),
+            round(number(raw_node.get("width")), 3),
+            round(number(raw_node.get("height")), 3),
+        )
+        pie_groups.setdefault(key, []).append(raw_node)
+
+    if not pie_groups:
+        return None
+
+    pie_nodes = max(pie_groups.values(), key=len)
+    if len(pie_nodes) < 2:
+        return None
+
+    def extract_text(node: dict[str, Any]) -> str:
+        text = node.get("text")
+        if isinstance(text, dict):
+            return str(text.get("text", "")).strip()
+        if isinstance(text, str):
+            return text.strip()
+        return ""
+
+    def center(node: dict[str, Any]) -> tuple[float, float]:
+        x = number(node.get("x"))
+        y = number(node.get("y"))
+        w = number(node.get("width"))
+        h = number(node.get("height"))
+        return x + w / 2, y + h / 2
+
+    legend_by_color: dict[str, str] = {}
+    for rect_node in rect_nodes:
+        style = rect_node.get("style")
+        if not isinstance(style, dict):
+            continue
+        fill_color = style.get("fill_color")
+        if not isinstance(fill_color, str) or not fill_color:
+            continue
+
+        rx, ry = center(rect_node)
+        rw = number(rect_node.get("width"))
+        best_text: tuple[float, str] | None = None
+        for text_node in text_nodes:
+            text = extract_text(text_node)
+            if not text:
+                continue
+            tx, ty = center(text_node)
+            if tx < rx + rw * 0.5:
+                continue
+            distance = abs(ty - ry) + max(0.0, tx - rx - rw)
+            if best_text is None or distance < best_text[0]:
+                best_text = (distance, text)
+
+        if best_text is not None:
+            legend_by_color.setdefault(fill_color.lower(), best_text[1])
+
+    def pick_title() -> str | None:
+        bx, by = center(pie_nodes[0])
+        best: tuple[float, str] | None = None
+        for text_node in text_nodes:
+            text = extract_text(text_node)
+            if not text or re.fullmatch(r"\d+(?:\.\d+)?%", text):
+                continue
+            tx, ty = center(text_node)
+            if ty >= by:
+                continue
+            distance = abs(tx - bx) + abs(ty - by)
+            if best is None or distance < best[0]:
+                best = (distance, text)
+        if best is None:
+            return None
+        return best[1]
+
+    title = pick_title()
+
+    def normalize_value(value: float) -> str:
+        rounded = round(value, 2)
+        if rounded.is_integer():
+            return str(int(rounded))
+        return f"{rounded:.2f}".rstrip("0").rstrip(".")
+
+    pie_nodes_sorted = sorted(
+        pie_nodes,
+        key=lambda item: float(
+            number(
+                item.get("composite_shape", {}).get("pie", {}).get("start_radial_line_angle")
+            )
+        ),
+    )
+
+    used_labels: set[str] = set()
+    lines: list[str] = ["pie showData"]
+    if title:
+        safe_title = title.replace('"', "'")
+        lines.append(f"  title {safe_title}")
+
+    for index, pie_node in enumerate(pie_nodes_sorted, start=1):
+        composite_shape = pie_node.get("composite_shape", {})
+        pie = composite_shape.get("pie", {})
+        central_angle = number(pie.get("central_angle"))
+        value = central_angle / 360 * 100
+
+        style = pie_node.get("style")
+        fill_color = ""
+        if isinstance(style, dict):
+            candidate = style.get("fill_color")
+            if isinstance(candidate, str):
+                fill_color = candidate.lower()
+
+        label = legend_by_color.get(fill_color, "")
+        if not label:
+            label = f"part_{index}"
+        if label in used_labels:
+            label = f"{label}_{index}"
+        used_labels.add(label)
+
+        safe_label = label.replace('"', "'")
+        lines.append(f'  "{safe_label}" : {normalize_value(value)}')
+
+    return _build_mermaid_code_block("\n".join(lines))
 
 def _convert_whiteboard_mindmap(raw_nodes: list[Any]) -> Block:
     nodes: dict[str, dict[str, Any]] = {}

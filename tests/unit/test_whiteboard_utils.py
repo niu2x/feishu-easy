@@ -178,3 +178,161 @@ def test_convert_whiteboard_flowchart_supports_more_composite_shape_types(caplog
     assert "flowchart" in block.inlines[0].text
     assert "unsupported composite_shape types: state_end, state_start" not in caplog.text
     assert "unsupported composite_shape types: pie, rect" not in caplog.text
+
+def test_convert_whiteboard_pie_chart_keeps_ratio_and_labels() -> None:
+    data = {
+        "nodes": [
+            {
+                "id": "title",
+                "type": "text_shape",
+                "x": 104.76,
+                "y": -84.75,
+                "width": 230.46,
+                "height": 34.75,
+                "text": {"text": "Request Distribution"},
+            },
+            {
+                "id": "p1",
+                "type": "composite_shape",
+                "x": 0,
+                "y": 0,
+                "width": 440,
+                "height": 440,
+                "style": {"fill_color": "#d6dcf3"},
+                "composite_shape": {
+                    "type": "pie",
+                    "pie": {"start_radial_line_angle": 54, "central_angle": 144, "radius": 55},
+                },
+            },
+            {
+                "id": "p2",
+                "type": "composite_shape",
+                "x": 0,
+                "y": 0,
+                "width": 440,
+                "height": 440,
+                "style": {"fill_color": "#8569cb"},
+                "composite_shape": {
+                    "type": "pie",
+                    "pie": {
+                        "start_radial_line_angle": 162,
+                        "central_angle": 108,
+                        "radius": 55,
+                    },
+                },
+            },
+            {
+                "id": "p3",
+                "type": "composite_shape",
+                "x": 0,
+                "y": 0,
+                "width": 440,
+                "height": 440,
+                "style": {"fill_color": "#fef1ce"},
+                "composite_shape": {
+                    "type": "pie",
+                    "pie": {"start_radial_line_angle": 234, "central_angle": 72, "radius": 55},
+                },
+            },
+            {
+                "id": "p4",
+                "type": "composite_shape",
+                "x": 0,
+                "y": 0,
+                "width": 440,
+                "height": 440,
+                "style": {"fill_color": "#5178c6"},
+                "composite_shape": {
+                    "type": "pie",
+                    "pie": {"start_radial_line_angle": 270, "central_angle": 36, "radius": 55},
+                },
+            },
+            {
+                "id": "l1-box",
+                "type": "composite_shape",
+                "x": 490,
+                "y": 172.5,
+                "width": 20,
+                "height": 20,
+                "style": {"fill_color": "#d6dcf3"},
+                "composite_shape": {"type": "rect"},
+            },
+            {
+                "id": "l1-text",
+                "type": "text_shape",
+                "x": 515,
+                "y": 172.5,
+                "width": 31,
+                "height": 20,
+                "text": {"text": "docx"},
+            },
+            {
+                "id": "l2-box",
+                "type": "composite_shape",
+                "x": 490,
+                "y": 197.5,
+                "width": 20,
+                "height": 20,
+                "style": {"fill_color": "#8569cb"},
+                "composite_shape": {"type": "rect"},
+            },
+            {
+                "id": "l2-text",
+                "type": "text_shape",
+                "x": 515,
+                "y": 197.5,
+                "width": 24,
+                "height": 20,
+                "text": {"text": "doc"},
+            },
+            {
+                "id": "l3-box",
+                "type": "composite_shape",
+                "x": 490,
+                "y": 222.5,
+                "width": 20,
+                "height": 20,
+                "style": {"fill_color": "#fef1ce"},
+                "composite_shape": {"type": "rect"},
+            },
+            {
+                "id": "l3-text",
+                "type": "text_shape",
+                "x": 515,
+                "y": 222.5,
+                "width": 35,
+                "height": 20,
+                "text": {"text": "sheet"},
+            },
+            {
+                "id": "l4-box",
+                "type": "composite_shape",
+                "x": 490,
+                "y": 247.5,
+                "width": 20,
+                "height": 20,
+                "style": {"fill_color": "#5178c6"},
+                "composite_shape": {"type": "rect"},
+            },
+            {
+                "id": "l4-text",
+                "type": "text_shape",
+                "x": 515,
+                "y": 247.5,
+                "width": 35,
+                "height": 20,
+                "text": {"text": "other"},
+            },
+        ]
+    }
+
+    block = convert_whiteboard_to_mermaid_code_block(data)
+
+    assert block.attrs.get("language") == "mermaid"
+    assert len(block.inlines) == 1
+    assert block.inlines[0].text.startswith("pie showData")
+    assert "title Request Distribution" in block.inlines[0].text
+    assert '"docx" : 40' in block.inlines[0].text
+    assert '"doc" : 30' in block.inlines[0].text
+    assert '"sheet" : 20' in block.inlines[0].text
+    assert '"other" : 10' in block.inlines[0].text
