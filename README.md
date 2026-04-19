@@ -2,6 +2,10 @@
 
 `feishu-easy` 是一个围绕飞书开放平台封装的 Python 工具库与 CLI，提供文档、表格、云盘等常见能力的统一调用方式。
 
+## CLI 使用手册
+
+- 完整命令文档见：`docs/CLI.md`
+
 ## 目录与分层约定
 
 - `src/feishu_easy/cli/`：CLI 装配、启动参数和命令入口。
