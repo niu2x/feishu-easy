@@ -9,9 +9,10 @@ from typing import Any
 
 import filetype
 import imagesize
-import mistletoe
-from mistletoe import Document
-from mistletoe.utils import traverse
+from markcraft import Document
+from markcraft.tokens.block import BlockCode, CodeFence
+from markcraft.tokens.span import Image
+from markcraft.utils import traverse
 
 from ..feishu_api import FeishuAPI, FeishuAPIError
 from .errors import ServiceError, ServiceValidationError
@@ -123,7 +124,7 @@ def _extract_markdown_image_paths(
 
     for cursor in traverse(Document(content)):
         node = cursor.node
-        if not isinstance(node, mistletoe.span_token.Image):
+        if not isinstance(node, Image):
             continue
 
         image_src = node.src.strip()
@@ -198,8 +199,8 @@ def _extract_markdown_code_blocks(content: str) -> list[tuple[str, str]]:
         if not isinstance(
             node,
             (
-                mistletoe.block_token.CodeFence,
-                mistletoe.block_token.BlockCode,
+                CodeFence,
+                BlockCode,
             ),
         ):
             continue
