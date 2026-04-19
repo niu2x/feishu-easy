@@ -532,13 +532,6 @@ def convert_single_block(
         )
 
     if block_name == "画板":
-        if expand_board and board_node_fetcher is not None:
-            board_token = block["board"]["token"]
-            board_data = board_node_fetcher(board_token)
-            board_block = convert_whiteboard_to_mermaid_code_block(board_data)
-            board_block.children = [*board_block.children, *children]
-            return board_block
-
         url = build_feishu_resource_url(
             _asset_path(mode, "board"),
             {
@@ -546,6 +539,15 @@ def convert_single_block(
                 "master_obj_type": "docx",
             },
         )
+
+        if expand_board and board_node_fetcher is not None:
+            board_token = block["board"]["token"]
+            board_data = board_node_fetcher(board_token)
+            board_block = convert_whiteboard_to_mermaid_code_block(board_data)
+            if board_block is not None:
+                board_block.children = [*board_block.children, *children]
+                return board_block
+
         return Block(
             type=BlockType.Paragraph,
             inlines=[

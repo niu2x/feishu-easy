@@ -336,3 +336,56 @@ def test_convert_whiteboard_pie_chart_keeps_ratio_and_labels() -> None:
     assert '"doc" : 30' in block.inlines[0].text
     assert '"sheet" : 20' in block.inlines[0].text
     assert '"other" : 10' in block.inlines[0].text
+
+def test_convert_whiteboard_flowchart_low_confidence_returns_none(caplog) -> None:
+    data = {
+        "nodes": [
+            {
+                "id": "n1",
+                "type": "composite_shape",
+                "x": 0,
+                "y": 0,
+                "width": 100,
+                "height": 60,
+                "text": {"text": "A"},
+                "composite_shape": {"type": "rect"},
+            },
+            {
+                "id": "n2",
+                "type": "composite_shape",
+                "x": 180,
+                "y": 0,
+                "width": 100,
+                "height": 60,
+                "text": {"text": "B"},
+                "composite_shape": {"type": "rect"},
+            },
+            {
+                "id": "n3",
+                "type": "composite_shape",
+                "x": 360,
+                "y": 0,
+                "width": 100,
+                "height": 60,
+                "text": {"text": "C"},
+                "composite_shape": {"type": "rect"},
+            },
+            {
+                "id": "n4",
+                "type": "composite_shape",
+                "x": 540,
+                "y": 0,
+                "width": 100,
+                "height": 60,
+                "text": {"text": "D"},
+                "composite_shape": {"type": "rect"},
+            },
+        ]
+    }
+
+    with caplog.at_level(logging.WARNING):
+        block = convert_whiteboard_to_mermaid_code_block(data)
+
+    assert block is None
+    assert "low confidence" in caplog.text
+    assert "fallback to board link" in caplog.text

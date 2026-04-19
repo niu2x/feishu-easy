@@ -36,13 +36,13 @@ def extract_dict(data: Any, path: str) -> Any:
 
     return current
 
-def convert_whiteboard_to_mermaid_code_block(data: dict[str, Any]) -> Block:
+def convert_whiteboard_to_mermaid_code_block(data: dict[str, Any]) -> Block | None:
     raw_nodes = data.get("nodes", [])
     if not isinstance(raw_nodes, list):
         logger.warning(
             "Board expand skipped: invalid whiteboard payload, `nodes` is not a list"
         )
-        return _empty_mermaid_code_block()
+        return None
 
     node_types = {
         str(node_type)
@@ -76,9 +76,9 @@ def convert_whiteboard_to_mermaid_code_block(data: dict[str, Any]) -> Block:
         "Board expand skipped: no supported nodes, available types: %s",
         ", ".join(sorted(node_types)) if node_types else "(none)",
     )
-    return _empty_mermaid_code_block()
+    return None
 
-def _convert_whiteboard_flowchart(raw_nodes: list[Any]) -> Block:
+def _convert_whiteboard_flowchart(raw_nodes: list[Any]) -> Block | None:
     pie_chart_block = _convert_whiteboard_pie_chart(raw_nodes)
     if pie_chart_block is not None:
         return pie_chart_block
@@ -254,7 +254,7 @@ def _convert_whiteboard_flowchart(raw_nodes: list[Any]) -> Block:
         logger.warning(
             "Board flowchart conversion skipped: no supported composite_shape nodes"
         )
-        return _empty_mermaid_code_block()
+        return None
 
     def get_connector_node_id(connector: dict[str, Any], side: str) -> str | None:
         side_data = connector.get(side)
@@ -359,7 +359,33 @@ def _convert_whiteboard_flowchart(raw_nodes: list[Any]) -> Block:
         components.append(component)
 
     if not components:
-        return _empty_mermaid_code_block()
+        return None
+
+    isolated_nodes = [
+        node_id for node_id, neighbors in adjacency.items() if not neighbors and node_id in node_decl
+    ]
+    singleton_components = [component for component in components if len(component) == 1]
+    node_count = len(node_decl)
+    edge_count = len(edge_records)
+
+    low_confidence_reasons: list[str] = []
+    if node_count >= 4 and edge_count == 0:
+        low_confidence_reasons.append("no connectors")
+    if node_count >= 4 and len(singleton_components) == len(components):
+        low_confidence_reasons.append("all components are isolated single nodes")
+    if node_count >= 6 and len(isolated_nodes) / max(node_count, 1) >= 0.7:
+        low_confidence_reasons.append("most nodes are isolated")
+
+    if low_confidence_reasons:
+        logger.warning(
+            "Board flowchart conversion low confidence (%s): nodes=%d edges=%d components=%d isolated=%d; fallback to board link",
+            ", ".join(low_confidence_reasons),
+            node_count,
+            edge_count,
+            len(components),
+            len(isolated_nodes),
+        )
+        return None
 
     sorted_titles = sorted(text_shapes, key=lambda item: item[0])
 
