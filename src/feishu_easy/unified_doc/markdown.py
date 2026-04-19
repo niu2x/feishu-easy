@@ -27,9 +27,8 @@ def _normalize_markdown(markdown: str) -> str:
     from markcraft.tokens.block import Document
     from markcraft.renderers.markdown import MarkdownRenderer
 
-    doc = Document(markdown)
-    with MarkdownRenderer() as renderer:
-        return renderer.render(doc)
+    with MarkdownRenderer() as r:
+        return r.render(r.parse(markdown))
 
 
 def _block_to_markdown(block: Block, list_depth: int = 0) -> list[str]:
