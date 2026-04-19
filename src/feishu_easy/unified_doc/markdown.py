@@ -21,8 +21,8 @@ def _render_document_to_markdown(document: UnifiedDocument) -> str:
     return "\n".join(lines).strip()
 
 def _normalize_markdown(markdown: str) -> str:
-    from mistletoe.markdown_renderer import MarkdownRenderer
-    from mistletoe import Document
+    from markcraft.tokens.block import Document
+    from markcraft.renderers.markdown import MarkdownRenderer
 
     doc = Document(markdown)
     with MarkdownRenderer() as renderer:
