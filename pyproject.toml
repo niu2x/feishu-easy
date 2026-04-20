@@ -17,6 +17,7 @@ dependencies = [
     "pydantic>=2.12.5",
     "feishu-operator>=1.7.0",
     "markcraft==1.0.1",
+    "Pillow>=10.0.0",
 ]
 
 [project.scripts]
