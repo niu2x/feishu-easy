@@ -1,9 +1,11 @@
 from .gateway import FeishuAPI
 from .bitable import FeishuBitableAPI
 from .board import FeishuBoardAPI
+from .contact import FeishuContactAPI
 from .doc import FeishuDocAPI
 from .docx import FeishuDocxAPI
 from .drive import FeishuDriveAPI
+from .im import FeishuImAPI
 from .sheets import FeishuSheetsAPI
 from .wiki import FeishuWikiAPI
 from .constants import (
@@ -31,9 +33,11 @@ __all__ = [
     "FeishuRateLimitError",
     "FeishuBoardAPI",
     "FeishuBitableAPI",
+    "FeishuContactAPI",
     "FeishuDocAPI",
     "FeishuDocxAPI",
     "FeishuDriveAPI",
+    "FeishuImAPI",
     "FeishuSheetsAPI",
     "FeishuWikiAPI",
 ]

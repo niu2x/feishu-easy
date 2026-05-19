@@ -8,11 +8,13 @@ import lark_oapi as lark
 from .auth import load_tenant_access_token_cache, request_tenant_access_token_once
 from .bitable import FeishuBitableAPI
 from .board import FeishuBoardAPI
+from .contact import FeishuContactAPI
 from .constants import FEISHU_RATE_LIMIT_ERROR_CODES
 from .doc import FeishuDocAPI
 from .docx import FeishuDocxAPI
 from .drive import FeishuDriveAPI
 from .errors import FeishuAPIError, FeishuRateLimitError
+from .im import FeishuImAPI
 from .retry import call_with_retry
 from .sheets import FeishuSheetsAPI
 from .wiki import FeishuWikiAPI
@@ -78,8 +80,10 @@ class FeishuAPI:
     def _init_api_parts(self) -> None:
         self.board = FeishuBoardAPI(self)
         self.bitable = FeishuBitableAPI(self)
+        self.contact = FeishuContactAPI(self)
         self.doc = FeishuDocAPI(self)
         self.docx = FeishuDocxAPI(self)
+        self.im = FeishuImAPI(self)
         self.wiki = FeishuWikiAPI(self)
         self.drive = FeishuDriveAPI(self)
         self.sheets = FeishuSheetsAPI(self)

@@ -13,6 +13,7 @@ from ...services.convert_service import (
     get_online_unified_document_by_node_token as get_online_unified_document_by_node_token_service,
 )
 from ...services.upload_service import upload_markdown as upload_markdown_service
+from ...services.business.user_profile import get_user_profile as get_user_profile_service
 
 app = typer.Typer(no_args_is_help=True)
 
@@ -117,3 +118,13 @@ def get_unified(
         expand_bitable=expand_bitable,
     )
     typer.echo(json.dumps(unified_document.model_dump(), indent=2, ensure_ascii=False))
+
+@app.command("get-user-profile")
+def get_user_profile_cmd(
+    open_id: Annotated[
+        str,
+        typer.Argument(help="User open_id"),
+    ],
+) -> None:
+    profile = get_user_profile_service(open_id)
+    typer.echo(json.dumps({"name": profile.name, "email": profile.email}, indent=2, ensure_ascii=False))
