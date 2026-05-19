@@ -30,7 +30,8 @@ build-backend = "setuptools.build_meta"
 where = ["src"]
 
 [[tool.uv.index]]
-url = "https://pypi.org/simple"
+url = "https://pypi.tuna.tsinghua.edu.cn/simple"
+default=true
 
 [dependency-groups]
 dev = [

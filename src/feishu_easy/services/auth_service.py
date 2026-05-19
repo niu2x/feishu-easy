@@ -10,3 +10,6 @@ def get_tenant_access_token() -> dict[str, Any]:
 def _get_tenant_access_token(*, api: FeishuAPI) -> dict[str, Any]:
     feishu_api = api
     return feishu_api.get_tenant_access_token()
+
+def acquire_user_access_token() -> str:
+    raise NotImplementedError

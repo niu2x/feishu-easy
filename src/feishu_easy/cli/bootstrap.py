@@ -8,15 +8,14 @@ from dotenv import load_dotenv
 
 from ..config import configure_feishu_api_from_env
 from ..feishu_api import FeishuAPI
+from ..services.auth_service import acquire_user_access_token
 
 def bootstrap_auth(run_as_user: bool) -> None:
     load_dotenv()
 
     if run_as_user:
+        user_access_token = acquire_user_access_token()
 
-        user_access_token = _auth.ensure_scopes(
-            ["docx:document.block:convert", "board:whiteboard:node:read", "board:whiteboard:node:create"], open_browser=True, token=None
-        )
         FeishuAPI.configure_defaults(
             user_access_token=user_access_token,
         )

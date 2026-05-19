@@ -48,6 +48,7 @@ PY
 
 - 默认模式依赖环境变量 `FEISHU_APP_ID`、`FEISHU_APP_SECRET`（`cli/bootstrap.py`）。
 - 日志级别通过 CLI 参数 `--log-level`。
+- `--run-as-user` 分支调用 `acquire_user_access_token()`（`services/auth_service.py`），当前为 stub（`raise NotImplementedError`），实现时需确认用户授权流程与依赖。
 - `convert` CLI 目前只暴露 `--from doc|docx|sheet`，即使 service 层支持 `bitable`，CLI 侧并未开放。
 
 ## 5) 提交日志强制规则（全仓库生效）
