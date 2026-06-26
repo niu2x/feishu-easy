@@ -375,7 +375,32 @@ def _bitable_value_to_lines(
 
         return lines
 
+    if field_type == 15 and ui_type == "Url":
+        if isinstance(value, str):
+            return [value]
+        if isinstance(value, dict):
+            text = value.get("text", "")
+            link = value.get("link", "")
+            if text and link:
+                return [f"[{text}]({link})"]
+            return [link or text]
+        if value is None:
+            return []
+        _raise_value_type_error(
+            field_name, field_type, ui_type, "str or dict(text=..., link=...)", value
+        )
+
+    if field_type == 23 and ui_type == "GroupChat":
+        if not isinstance(value, list):
+            _raise_value_type_error(field_name, field_type, ui_type, "list[dict(name=...)]", value)
+        return [
+            item["name"] if isinstance(item, dict) and isinstance(item.get("name"), str) else str(item)
+            for item in value
+        ]
+
     if field_type != 1:
+        import pprint
+        print(f"[DEBUG] Unsupported field: field={field_name!r}, type={field_type}, ui_type={ui_type!r}, value={pprint.pformat(value)}")
         raise ValueError(
             f"Unsupported bitable field type for now: type={field_type}, ui_type={ui_type!r}, "
             f"field={field_name!r}"
@@ -421,6 +446,8 @@ def _raise_value_type_error(
     expected: str,
     value: Any,
 ) -> None:
+    import pprint
+    print(f"[DEBUG] Unsupported cell value: field={field_name!r}, type={field_type}, ui_type={ui_type!r}, expected={expected}, value={pprint.pformat(value)}")
     raise ValueError(
         "Unsupported bitable cell value "
         f"for field={field_name!r}, type={field_type}, ui_type={ui_type!r}: "
