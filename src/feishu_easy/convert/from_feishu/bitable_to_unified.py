@@ -419,12 +419,21 @@ def _bitable_value_to_lines(
                 "list item object(type=text,text=str)",
                 item,
             )
-        if item.get("type") != "text":
+        item_type = item.get("type")
+        if item_type == "mention":
+            text = item.get("text", "")
+            link = item.get("link", "")
+            if text and link:
+                lines.append(f"[{text}]({link})")
+            else:
+                lines.append(text or link or "")
+            continue
+        if item_type != "text":
             _raise_value_type_error(
                 field_name,
                 field_type,
                 ui_type,
-                "list item type=text",
+                "list item type=text or type=mention",
                 item,
             )
         text = item.get("text")
