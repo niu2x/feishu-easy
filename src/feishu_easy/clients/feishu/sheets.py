@@ -6,8 +6,10 @@ from urllib.parse import quote
 import requests
 from lark_oapi.api.sheets.v3 import (
     CreateSpreadsheetRequest,
+    GetSpreadsheetSheetFloatImageRequest,
     GetSpreadsheetSheetRequest,
     GetSpreadsheetRequest,
+    QuerySpreadsheetSheetFloatImageRequest,
     QuerySpreadsheetSheetRequest,
     Spreadsheet,
 )
@@ -147,6 +149,50 @@ class FeishuSheetsAPI(_BaseAPIGroup):
             )
 
         return wrapped_response.data
+
+    def get_spreadsheet_sheet_float_image(
+        self,
+        spreadsheet_token: str,
+        sheet_id: str,
+        float_image_id: str,
+    ) -> dict[str, Any]:
+        option = self._request_option()
+        request = (
+            GetSpreadsheetSheetFloatImageRequest.builder()
+            .spreadsheet_token(spreadsheet_token)
+            .sheet_id(sheet_id)
+            .float_image_id(float_image_id)
+            .build()
+        )
+
+        response = self._call_with_retry(
+            "client.sheets.v3.spreadsheet_sheet_float_image.get",
+            lambda: self._parent.client.sheets.v3.spreadsheet_sheet_float_image.get(
+                request, option
+            ),
+        )
+        return self._marshal_data(response.data)
+
+    def query_spreadsheet_sheet_float_images(
+        self,
+        spreadsheet_token: str,
+        sheet_id: str,
+    ) -> dict[str, Any]:
+        option = self._request_option()
+        request = (
+            QuerySpreadsheetSheetFloatImageRequest.builder()
+            .spreadsheet_token(spreadsheet_token)
+            .sheet_id(sheet_id)
+            .build()
+        )
+
+        response = self._call_with_retry(
+            "client.sheets.v3.spreadsheet_sheet_float_image.query",
+            lambda: self._parent.client.sheets.v3.spreadsheet_sheet_float_image.query(
+                request, option
+            ),
+        )
+        return self._marshal_data(response.data)
 
     def create_spreadsheet(
         self,

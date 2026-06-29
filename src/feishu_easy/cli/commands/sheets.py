@@ -12,8 +12,10 @@ from ...services.sheets_service import (
     get_spreadsheet_metainfo as get_spreadsheet_metainfo_service,
     get_spreadsheet as get_spreadsheet_service,
     get_spreadsheet_sheet as get_spreadsheet_sheet_service,
+    get_spreadsheet_sheet_float_image as get_spreadsheet_sheet_float_image_service,
     get_sheet_values as get_sheet_values_service,
     query_spreadsheet_sheet as query_spreadsheet_sheet_service,
+    query_spreadsheet_sheet_float_images as query_spreadsheet_sheet_float_images_service,
 )
 
 app = typer.Typer(no_args_is_help=True)
@@ -160,6 +162,57 @@ def get_sheet_values(
             ensure_ascii=False,
         )
     )
+
+@app.command()
+def query_float_images(
+    spreadsheet_token: Annotated[
+        str,
+        typer.Argument(help="Spreadsheet token"),
+    ],
+    sheet_id: Annotated[
+        str,
+        typer.Argument(help="Sheet id"),
+    ],
+) -> None:
+    typer.echo(
+        json.dumps(
+            query_spreadsheet_sheet_float_images_service(
+                spreadsheet_token=spreadsheet_token,
+                sheet_id=sheet_id,
+            ),
+            indent=2,
+            ensure_ascii=False,
+        )
+    )
+
+
+@app.command()
+def get_float_image(
+    spreadsheet_token: Annotated[
+        str,
+        typer.Argument(help="Spreadsheet token"),
+    ],
+    sheet_id: Annotated[
+        str,
+        typer.Argument(help="Sheet id"),
+    ],
+    float_image_id: Annotated[
+        str,
+        typer.Argument(help="Float image id"),
+    ],
+) -> None:
+    typer.echo(
+        json.dumps(
+            get_spreadsheet_sheet_float_image_service(
+                spreadsheet_token=spreadsheet_token,
+                sheet_id=sheet_id,
+                float_image_id=float_image_id,
+            ),
+            indent=2,
+            ensure_ascii=False,
+        )
+    )
+
 
 @app.command()
 def get_sheet_content(

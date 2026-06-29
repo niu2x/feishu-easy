@@ -135,6 +135,52 @@ def _get_sheet_values(
         date_time_render_option=date_time_render_option,
     )
 
+
+def get_spreadsheet_sheet_float_image(
+    spreadsheet_token: str,
+    sheet_id: str,
+    float_image_id: str,
+) -> dict[str, Any]:
+    return _get_spreadsheet_sheet_float_image(
+        spreadsheet_token, sheet_id, float_image_id, api=FeishuAPI()
+    )
+
+
+def _get_spreadsheet_sheet_float_image(
+    spreadsheet_token: str,
+    sheet_id: str,
+    float_image_id: str,
+    *,
+    api: FeishuAPI,
+) -> dict[str, Any]:
+    return api.sheets.get_spreadsheet_sheet_float_image(
+        spreadsheet_token=spreadsheet_token,
+        sheet_id=sheet_id,
+        float_image_id=float_image_id,
+    )
+
+
+def query_spreadsheet_sheet_float_images(
+    spreadsheet_token: str,
+    sheet_id: str,
+) -> dict[str, Any]:
+    return _query_spreadsheet_sheet_float_images(
+        spreadsheet_token, sheet_id, api=FeishuAPI()
+    )
+
+
+def _query_spreadsheet_sheet_float_images(
+    spreadsheet_token: str,
+    sheet_id: str,
+    *,
+    api: FeishuAPI,
+) -> dict[str, Any]:
+    return api.sheets.query_spreadsheet_sheet_float_images(
+        spreadsheet_token=spreadsheet_token,
+        sheet_id=sheet_id,
+    )
+
+
 def _num_to_col(num: int) -> str:
     if num <= 0:
         raise ServiceValidationError("column count must be positive")
