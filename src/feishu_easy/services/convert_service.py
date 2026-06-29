@@ -1,12 +1,16 @@
 from __future__ import annotations
 
 import json
+import logging
 from collections.abc import Callable
+from pathlib import Path
 from typing import Any, Literal
+from urllib.parse import parse_qs, urlparse
 
 from ..unified_doc import (
     Block,
     UnifiedDocument,
+    extract_mark_urls_from_blocks,
     unified_to_markdown,
 )
 from .errors import ServiceError, ServiceValidationError
@@ -18,6 +22,8 @@ from ..convert.from_feishu import (
     sheet_to_unified,
 )
 from ..feishu_api import FeishuAPI
+
+logger = logging.getLogger(__name__)
 
 SourceType = Literal["doc", "docx", "sheet", "bitable"]
 TargetType = Literal["unified", "markdown"]
@@ -137,6 +143,88 @@ def get_online_markdown_raw_by_node_token(
         expand_sheets=expand_sheets,
         expand_bitable=expand_bitable,
     )
+
+def download_feishu_media(file_token: str) -> tuple[str, bytes]:
+    return _download_feishu_media(file_token, api=FeishuAPI())
+
+
+def _download_feishu_media(file_token: str, api: FeishuAPI) -> tuple[str, bytes]:
+    import requests
+
+    token = api.get_access_token()
+    if not token:
+        raise RuntimeError("No access token available")
+
+    logger.info(
+        "Downloading media file_token=%s with token prefix=%s... (is_user=%s)",
+        file_token, token[:20], bool(api._user_access_token),
+    )
+
+    url = f"https://open.feishu.cn/open-apis/drive/v1/medias/{file_token}/download"
+    headers = {"Authorization": f"Bearer {token}"}
+    resp = requests.get(url, headers=headers, timeout=30)
+    if resp.status_code != 200:
+        raise RuntimeError(
+            f"client.drive.v1.media.download failed: HTTP {resp.status_code}\n"
+            f"url={url}\n"
+            f"response_body={resp.text[:500]}\n"
+            f"response_headers={dict(resp.headers)}"
+        )
+
+    content_disposition = resp.headers.get("Content-Disposition", "")
+    file_name = "image"
+    if "filename=" in content_disposition:
+        file_name = content_disposition.split("filename=")[-1].strip('" ')
+    elif "filename*=" in content_disposition:
+        file_name = (
+            content_disposition.split("filename*=")[-1]
+            .strip("' ")
+            .split("'")[-1]
+        )
+
+    return file_name, resp.content
+
+
+def _download_images_and_rewrite_markdown(
+    markdown: str,
+    doc: UnifiedDocument,
+    *,
+    api: FeishuAPI,
+    output_dir: str = ".",
+) -> str:
+    image_urls, _ = extract_mark_urls_from_blocks(doc.blocks)
+    if not image_urls:
+        return markdown
+
+    result = markdown
+    output_path = Path(output_dir)
+    output_path.mkdir(parents=True, exist_ok=True)
+
+    seq = 0
+    for url in image_urls:
+        parsed = urlparse(url)
+        if not parsed.path.startswith("/feishu/"):
+            continue
+        params = parse_qs(parsed.query)
+        file_tokens = params.get("file_token")
+        if not file_tokens:
+            continue
+        file_token = file_tokens[0]
+        try:
+            file_name, data = _download_feishu_media(file_token, api=api)
+        except Exception as exc:
+            logger.warning("Failed to download image %s: %s", file_token, exc)
+            continue
+        seq += 1
+        ext = Path(file_name).suffix or ".png"
+        local_name = f"{seq}{ext}"
+        local_path = output_path / local_name
+        with open(local_path, "wb") as f:
+            f.write(data)
+        result = result.replace(url, local_name)
+
+    return result
+
 
 def _get_online_markdown_raw_by_node_token(
     node_token: str,
